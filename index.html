@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Visualizations</title>
-<base href=".">
+<link rel="icon" type="image/svg+xml" href="assets/favicon.svg">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
 
@@ -25,6 +25,32 @@
     --physics: #f472b6;
     --physics-glow: rgba(244, 114, 182, 0.4);
     --physics2: #fb923c;
+    --topbar-bg: rgba(10, 10, 15, 0.82);
+    --particle-color: 108, 138, 255;
+    --sym-color: rgba(108, 138, 255, 0.06);
+    --grain-opacity: 0.5;
+  }
+
+  /* ───── light mode ───── */
+  body.light {
+    --bg: #f4f5f7;
+    --bg-card: rgba(0, 0, 0, 0.03);
+    --bg-card-hover: rgba(0, 0, 0, 0.06);
+    --border: rgba(0, 0, 0, 0.08);
+    --border-hover: rgba(108, 138, 255, 0.4);
+    --text: #1a1a2e;
+    --text-dim: #6b7280;
+    --accent: #4f6df5;
+    --accent-glow: rgba(79, 109, 245, 0.3);
+    --accent2: #7c5cbf;
+    --accent3: #0891b2;
+    --physics: #db2777;
+    --physics-glow: rgba(219, 39, 119, 0.3);
+    --physics2: #ea580c;
+    --topbar-bg: rgba(244, 245, 247, 0.88);
+    --particle-color: 79, 109, 245;
+    --sym-color: rgba(79, 109, 245, 0.08);
+    --grain-opacity: 0.15;
   }
 
   body {
@@ -57,7 +83,7 @@
   .bg-sym {
     position: absolute;
     font-family: 'JetBrains Mono', monospace;
-    color: rgba(108, 138, 255, 0.06);
+    color: var(--sym-color);
     font-size: 1.4rem;
     animation: float-up linear infinite;
     will-change: transform;
@@ -80,7 +106,225 @@
     pointer-events: none;
     background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
     background-repeat: repeat;
-    opacity: 0.5;
+    opacity: var(--grain-opacity);
+  }
+
+  /* ═════════════════════════════════════
+     LAYOUT
+     ═════════════════════════════════════ */
+  .hidden {
+    display: none !important;
+  }
+
+  /* ═════════════════════════════════════
+     TOP BAR
+     ═════════════════════════════════════ */
+  .top-bar {
+    position: fixed;
+    top: 0; left: 0; right: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem 1.5rem;
+    background: var(--topbar-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid var(--border);
+  }
+
+  .top-logo {
+    width: 40px;
+    height: 40px;
+    border-radius: 11px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #fff;
+    flex-shrink: 0;
+    box-shadow: 0 0 20px var(--accent-glow);
+    cursor: pointer;
+    transition: transform 0.3s cubic-bezier(0.23,1,0.32,1), box-shadow 0.3s;
+    user-select: none;
+  }
+
+  .top-logo:hover {
+    transform: scale(1.08);
+    box-shadow: 0 0 30px var(--accent-glow);
+  }
+
+  .top-brand {
+    display: flex;
+    flex-direction: column;
+    gap: 0.05rem;
+    min-width: 0;
+  }
+
+  .top-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    background: linear-gradient(135deg, #fff 0%, var(--accent) 50%, var(--accent2) 100%);
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: gradient-shift 6s ease-in-out infinite;
+    line-height: 1.2;
+  }
+
+  @keyframes gradient-shift {
+    0%, 100% { background-position: 0% 50%; }
+    50%      { background-position: 100% 50%; }
+  }
+
+  .top-sub {
+    font-size: 0.68rem;
+    color: var(--text-dim);
+    font-weight: 300;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .top-spacer {
+    flex: 1;
+  }
+
+  .top-search-wrap {
+    position: relative;
+    width: 280px;
+    flex-shrink: 0;
+  }
+
+  .top-settings {
+    width: 34px;
+    height: 34px;
+    border-radius: 10px;
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    flex-shrink: 0;
+  }
+
+  .top-settings:hover {
+    color: var(--text);
+    border-color: var(--border-hover);
+    background: var(--bg-card);
+  }
+
+  .top-settings svg {
+    width: 16px;
+    height: 16px;
+    stroke: currentColor;
+    stroke-width: 2;
+    fill: none;
+  }
+
+  /* ───── settings panel ───── */
+  .settings-panel {
+    position: fixed;
+    top: 60px;
+    right: 1.5rem;
+    z-index: 20;
+    width: 260px;
+    background: #1a1a24;
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 14px;
+    padding: 1.2rem;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.05);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    animation: panel-in 0.25s cubic-bezier(0.23,1,0.32,1);
+  }
+
+  body.light .settings-panel {
+    background: #ffffff;
+    border-color: rgba(0,0,0,0.1);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.15), 0 0 0 1px rgba(0,0,0,0.05);
+  }
+
+  @keyframes panel-in {
+    from { opacity: 0; transform: translateY(-8px) scale(0.96); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  .settings-heading {
+    font-size: 0.72rem;
+    font-family: 'JetBrains Mono', monospace;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--text-dim);
+    margin-bottom: 1rem;
+  }
+
+  .settings-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 0;
+  }
+
+  .settings-row + .settings-row {
+    border-top: 1px solid var(--border);
+  }
+
+  .settings-label {
+    font-size: 0.88rem;
+    font-weight: 500;
+  }
+
+  /* toggle switch */
+  .toggle {
+    position: relative;
+    width: 44px;
+    height: 24px;
+    background: rgba(255,255,255,0.1);
+    border-radius: 12px;
+    cursor: pointer;
+    transition: background 0.3s;
+    flex-shrink: 0;
+    border: none;
+    padding: 0;
+  }
+
+  .toggle::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    left: 3px;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: var(--text-dim);
+    transition: transform 0.3s cubic-bezier(0.23,1,0.32,1), background 0.3s;
+  }
+
+  .toggle.active {
+    background: var(--accent);
+  }
+
+  .toggle.active::after {
+    transform: translateX(20px);
+    background: #fff;
+  }
+
+  body.light .toggle {
+    background: rgba(0,0,0,0.1);
+  }
+
+  body.light .toggle.active {
+    background: var(--accent);
   }
 
   /* ═════════════════════════════════════
@@ -94,11 +338,8 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
+    padding-top: 80px; /* clear top bar */
     transition: opacity 0.5s, transform 0.5s cubic-bezier(0.23, 1, 0.32, 1);
-  }
-
-  .hidden {
-    display: none !important;
   }
 
   .screen.fade-out {
@@ -115,89 +356,6 @@
     from { opacity: 0; transform: scale(0.96) translateY(20px); }
     to   { opacity: 1; transform: scale(1) translateY(0); }
   }
-
-  /* ═════════════════════════════════════
-     SCREEN 1: WELCOME
-     ═════════════════════════════════════ */
-  #welcome { text-align: center; padding: 2rem; }
-
-  .welcome-logo {
-    width: 90px;
-    height: 90px;
-    border-radius: 24px;
-    background: linear-gradient(135deg, var(--accent), var(--accent2));
-    display: inline-flex;
-    align-items: center;
-    justify-content: center;
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 4.95rem; /* ∞ 2.25× base 2.2rem */
-    font-weight: 700;
-    color: #fff;
-    cursor: pointer;
-    box-shadow: 0 0 50px var(--accent-glow), 0 0 100px rgba(108, 138, 255, 0.15);
-    animation: pulse-glow 4s ease-in-out infinite;
-    transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1), box-shadow 0.4s;
-    user-select: none;
-  }
-
-  .welcome-logo:hover {
-    transform: scale(1.08);
-    box-shadow: 0 0 70px var(--accent-glow), 0 0 140px rgba(108, 138, 255, 0.25);
-  }
-
-  .welcome-logo:active {
-    transform: scale(0.97);
-  }
-
-  @keyframes pulse-glow {
-    0%, 100% { box-shadow: 0 0 50px var(--accent-glow), 0 0 100px rgba(108, 138, 255, 0.15); }
-    50%      { box-shadow: 0 0 70px var(--accent-glow), 0 0 140px rgba(108, 138, 255, 0.25); }
-  }
-
-  .welcome-title {
-    margin-top: 2rem;
-    font-size: 2.8rem;
-    font-weight: 700;
-    letter-spacing: -0.03em;
-    background: linear-gradient(135deg, #fff 0%, var(--accent) 50%, var(--accent2) 100%);
-    background-size: 200% 200%;
-    -webkit-background-clip: text;
-    -webkit-text-fill-color: transparent;
-    background-clip: text;
-    animation: gradient-shift 6s ease-in-out infinite;
-  }
-
-  @keyframes gradient-shift {
-    0%, 100% { background-position: 0% 50%; }
-    50%      { background-position: 100% 50%; }
-  }
-
-  .welcome-sub {
-    margin-top: 0.6rem;
-    color: var(--text-dim);
-    font-size: 1.05rem;
-    font-weight: 300;
-  }
-
-  .welcome-hint {
-    margin-top: 2.5rem;
-    color: var(--text-dim);
-    font-size: 0.78rem;
-    font-family: 'JetBrains Mono', monospace;
-    opacity: 0;
-    animation: hint-appear 1s 1.5s forwards;
-  }
-
-  @keyframes hint-appear {
-    to { opacity: 0.5; }
-  }
-
-  /* entrance stagger */
-  .w-stagger { opacity: 0; transform: translateY(30px); animation: el-in 1s cubic-bezier(0.23,1,0.32,1) forwards; }
-  .w-stagger:nth-child(1) { animation-delay: 0s; }
-  .w-stagger:nth-child(2) { animation-delay: 0.12s; }
-  .w-stagger:nth-child(3) { animation-delay: 0.22s; }
-  .w-stagger:nth-child(4) { animation-delay: 0.32s; }
 
   @keyframes el-in {
     to { opacity: 1; transform: translateY(0); }
@@ -608,16 +766,13 @@
     opacity: 0.5;
   }
 
-  /* global search on categories screen */
-  #global-search-wrap {
-    margin-top: 2.5rem;
-  }
-
-  /* search results area on categories screen */
+  /* search results area below top bar */
   #global-results {
     width: 100%;
     max-width: 90vw;
-    margin-top: 2rem;
+    margin: 1.5rem auto 0;
+    position: relative;
+    z-index: 2;
   }
 
   #global-results .project-grid {
@@ -648,7 +803,9 @@
 
   /* ───── responsive ───── */
   @media (max-width: 600px) {
-    .welcome-title { font-size: 2rem; }
+    .top-bar { padding: 0.6rem 1rem; gap: 0.7rem; }
+    .top-sub { display: none; }
+    .top-search-wrap { max-width: none; }
     .cat-grid { flex-direction: column; align-items: center; }
     .cat-card { width: 100%; max-width: 260px; }
     .project-grid { grid-template-columns: 1fr; }
@@ -661,16 +818,40 @@
 <canvas id="bg-canvas"></canvas>
 <div class="bg-symbols" id="bg-symbols"></div>
 
-<!-- ═══════════ SCREEN 1: WELCOME ═══════════ -->
-<div class="screen" id="welcome">
-  <div class="welcome-logo w-stagger" id="enter-btn">∞</div>
-  <h1 class="welcome-title w-stagger">Visualizations</h1>
-  <p class="welcome-sub w-stagger">Interactive explorations of math & physics</p>
-  <p class="welcome-hint w-stagger">click to enter</p>
+<!-- ═══════════ TOP BAR ═══════════ -->
+<div class="top-bar">
+  <div class="top-logo" id="home-btn">∞</div>
+  <div class="top-brand">
+    <div class="top-title">Visualizations</div>
+    <div class="top-sub">Interactive explorations of math & physics</div>
+  </div>
+  <div class="top-spacer"></div>
+  <div class="search-wrap top-search-wrap">
+    <svg class="search-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+    <input class="search-input" id="global-search" type="text" placeholder="Search all visualizations…" autocomplete="off">
+  </div>
+  <button class="top-settings" id="settings-btn" title="Settings">
+    <svg viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+  </button>
 </div>
 
-<!-- ═══════════ SCREEN 2: CATEGORIES ═══════════ -->
-<div class="screen hidden" id="categories">
+<!-- ═══════════ SETTINGS PANEL ═══════════ -->
+<div class="settings-panel hidden" id="settings-panel">
+  <div class="settings-heading">Settings</div>
+  <div class="settings-row">
+    <span class="settings-label">Light mode</span>
+    <button class="toggle" id="theme-toggle" title="Toggle light/dark mode"></button>
+  </div>
+</div>
+
+<!-- ═══════════ GLOBAL SEARCH RESULTS ═══════════ -->
+<div id="global-results" class="hidden" style="padding-top: 80px;">
+  <div class="project-grid" id="global-results-grid"></div>
+  <div class="search-no-results hidden" id="global-no-results">No visualizations found</div>
+</div>
+
+<!-- ═══════════ SCREEN 1: CATEGORIES ═══════════ -->
+<div class="screen" id="categories">
   <h2 class="cat-heading c-stagger">Choose a domain</h2>
   <p class="cat-sub c-stagger">What would you like to explore?</p>
   <div class="cat-grid">
@@ -682,14 +863,6 @@
       <div class="cat-icon physics">⚛</div>
       <div class="cat-label">Physics</div>
     </div>
-  </div>
-  <div class="search-wrap c-stagger" id="global-search-wrap">
-    <svg class="search-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-    <input class="search-input" id="global-search" type="text" placeholder="Search all visualizations…" autocomplete="off">
-  </div>
-  <div id="global-results" class="hidden">
-    <div class="project-grid" id="global-results-grid"></div>
-    <div class="search-no-results hidden" id="global-no-results">No visualizations found</div>
   </div>
 </div>
 
@@ -742,7 +915,6 @@
 <script>
 // ═══════════ DYNAMIC PROJECT LOADING ═══════════
 const screens = {
-  welcome:    document.getElementById('welcome'),
   categories: document.getElementById('categories'),
   projects:   document.getElementById('projects'),
 };
@@ -800,26 +972,33 @@ PROJECTS.forEach(p => {
 mathEmpty.style.display    = mathCount > 0 ? 'none' : '';
 physicsEmpty.style.display = physicsCount > 0 ? 'none' : '';
 
+// Trigger category stagger animations on page load
+screens.categories.querySelectorAll('.c-stagger').forEach(el => {
+  el.classList.add('animate');
+});
+
 // ═══════════ SEARCH ═══════════
 const globalSearch      = document.getElementById('global-search');
 const globalResults     = document.getElementById('global-results');
 const globalResultsGrid = document.getElementById('global-results-grid');
 const globalNoResults   = document.getElementById('global-no-results');
-const catGrid           = document.querySelector('.cat-grid');
 
-// Global search — filters across ALL projects, shows results inline
+// Global search — hides whatever screen is visible and shows results
 globalSearch.addEventListener('input', () => {
   const q = globalSearch.value.trim().toLowerCase();
 
   if (!q) {
     globalResults.classList.add('hidden');
-    catGrid.classList.remove('hidden');
     globalResultsGrid.innerHTML = '';
     globalNoResults.classList.add('hidden');
+    // restore whichever screen was active
+    screens[activeScreen].classList.remove('hidden');
     return;
   }
 
-  catGrid.classList.add('hidden');
+  // hide both screens, show results
+  screens.categories.classList.add('hidden');
+  screens.projects.classList.add('hidden');
   globalResults.classList.remove('hidden');
   globalResultsGrid.innerHTML = '';
 
@@ -877,16 +1056,18 @@ document.getElementById('back-btn').addEventListener('click', () => {
   });
 });
 
-// Clear global search when navigating into a category
+// Clear global search
 function clearGlobalSearch() {
   globalSearch.value = '';
   globalResults.classList.add('hidden');
   globalResultsGrid.innerHTML = '';
   globalNoResults.classList.add('hidden');
-  catGrid.classList.remove('hidden');
 }
 
 // ═══════════ SCREEN TRANSITIONS ═══════════
+// track which screen is "active" so search can restore it
+let activeScreen = 'categories';
+
 function transition(from, to, setup) {
   from.classList.add('fade-out');
   setTimeout(() => {
@@ -905,9 +1086,16 @@ function transition(from, to, setup) {
   }, 400);
 }
 
-// Welcome → Categories
-document.getElementById('enter-btn').addEventListener('click', () => {
-  transition(screens.welcome, screens.categories);
+// Home button (logo) → back to categories
+document.getElementById('home-btn').addEventListener('click', () => {
+  clearGlobalSearch();
+  if (activeScreen === 'categories') return;
+  document.querySelectorAll('.domain-search').forEach(input => {
+    input.value = '';
+    input.dispatchEvent(new Event('input'));
+  });
+  transition(screens.projects, screens.categories);
+  activeScreen = 'categories';
 });
 
 // Category cards → Projects
@@ -925,6 +1113,7 @@ document.querySelectorAll('.cat-card').forEach(card => {
         void el.offsetWidth;
       });
     });
+    activeScreen = 'projects';
   });
 
   card.addEventListener('mousemove', e => {
@@ -936,7 +1125,9 @@ document.querySelectorAll('.cat-card').forEach(card => {
 
 // Back → Categories
 document.getElementById('back-btn').addEventListener('click', () => {
+  clearGlobalSearch();
   transition(screens.projects, screens.categories);
+  activeScreen = 'categories';
 });
 
 // ═══════════ PARTICLE NETWORK ═══════════
@@ -944,6 +1135,13 @@ document.getElementById('back-btn').addEventListener('click', () => {
   const canvas = document.getElementById('bg-canvas');
   const ctx = canvas.getContext('2d');
   let w, h, particles = [], mouse = { x: null, y: null };
+  let pColor = getComputedStyle(document.documentElement).getPropertyValue('--particle-color').trim() || '108,138,255';
+
+  // update particle color when theme changes
+  const origToggle = themeToggle.onclick;
+  new MutationObserver(() => {
+    pColor = getComputedStyle(document.documentElement).getPropertyValue('--particle-color').trim() || '108,138,255';
+  }).observe(document.body, { attributes: true, attributeFilter: ['class'] });
 
   function resize() { w = canvas.width = innerWidth; h = canvas.height = innerHeight; }
   resize();
@@ -970,7 +1168,7 @@ document.getElementById('back-btn').addEventListener('click', () => {
     }
     draw() {
       ctx.beginPath(); ctx.arc(this.x, this.y, this.r, 0, Math.PI*2);
-      ctx.fillStyle = `rgba(108,138,255,${this.a})`; ctx.fill();
+      ctx.fillStyle = `rgba(${pColor},${this.a})`; ctx.fill();
     }
   }
 
@@ -988,7 +1186,7 @@ document.getElementById('back-btn').addEventListener('click', () => {
           ctx.beginPath();
           ctx.moveTo(particles[i].x, particles[i].y);
           ctx.lineTo(particles[j].x, particles[j].y);
-          ctx.strokeStyle = `rgba(108,138,255,${(1 - d/150)*0.08})`;
+          ctx.strokeStyle = `rgba(${pColor},${(1 - d/150)*0.08})`;
           ctx.lineWidth = 0.5; ctx.stroke();
         }
       }
@@ -996,6 +1194,39 @@ document.getElementById('back-btn').addEventListener('click', () => {
   }
   frame();
 })();
+
+// ═══════════ SETTINGS ═══════════
+const settingsBtn   = document.getElementById('settings-btn');
+const settingsPanel = document.getElementById('settings-panel');
+const themeToggle   = document.getElementById('theme-toggle');
+
+// Toggle panel open/close
+settingsBtn.addEventListener('click', (e) => {
+  e.stopPropagation();
+  settingsPanel.classList.toggle('hidden');
+});
+
+// Close panel when clicking outside
+document.addEventListener('click', (e) => {
+  if (!settingsPanel.contains(e.target) && !settingsBtn.contains(e.target)) {
+    settingsPanel.classList.add('hidden');
+  }
+});
+
+// Theme toggle
+themeToggle.addEventListener('click', () => {
+  const isLight = document.body.classList.toggle('light');
+  themeToggle.classList.toggle('active', isLight);
+  try { localStorage.setItem('theme', isLight ? 'light' : 'dark'); } catch(e) {}
+});
+
+// Restore saved theme
+try {
+  if (localStorage.getItem('theme') === 'light') {
+    document.body.classList.add('light');
+    themeToggle.classList.add('active');
+  }
+} catch(e) {}
 
 // ═══════════ FLOATING SYMBOLS ═══════════
 (function() {
