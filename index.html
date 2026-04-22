@@ -130,7 +130,7 @@
     align-items: center;
     justify-content: center;
     font-family: 'JetBrains Mono', monospace;
-    font-size: 2.2rem;
+    font-size: 4.95rem; /* ∞ 2.25× base 2.2rem */
     font-weight: 700;
     color: #fff;
     cursor: pointer;
@@ -293,6 +293,7 @@
   .cat-icon.physics {
     background: linear-gradient(135deg, var(--physics), var(--physics2));
     box-shadow: 0 0 30px var(--physics-glow);
+    font-size: 4.05rem; /* ⚛ 2.25× base 1.8rem */
   }
 
   .cat-card:hover .cat-icon.math { box-shadow: 0 0 45px var(--accent-glow); }
@@ -388,6 +389,7 @@
   .section-icon.physics {
     background: linear-gradient(135deg, var(--physics), var(--physics2));
     box-shadow: 0 0 30px var(--physics-glow);
+    font-size: 3.15rem; /* ⚛ 2.25× base 1.4rem */
   }
 
   .section-title {
@@ -541,6 +543,10 @@
     font-size: 3rem;
     margin-bottom: 1rem;
     opacity: 0.3;
+  }
+
+  #physics-section .empty-icon {
+    font-size: 6.75rem; /* ⚛ 2.25× base 3rem */
   }
 
   .empty-title {
