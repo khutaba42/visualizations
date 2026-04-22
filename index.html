@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Visualizations</title>
-<base href="/visualizations/">
+<base href=".">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
 
@@ -616,37 +616,8 @@
       <div class="section-icon math">∑</div>
       <h2 class="section-title math-title">Mathematics</h2>
     </div>
-
-    <div class="project-grid">
-      <!--
-        ┌────────────────────────────────────────────────────┐
-        │  HOW TO ADD A MATH PROJECT CARD                    │
-        │                                                    │
-        │  1. Copy an <a> block below                        │
-        │  2. Change href to your project folder             │
-        │  3. Change the card-title text                     │
-        │                                                    │
-        │  TO ADD A THUMBNAIL IMAGE:                         │
-        │  Replace the <div class="card-thumb-placeholder">  │
-        │  block with:                                       │
-        │    <img src="assets/your-image.png" alt="">        │
-        └────────────────────────────────────────────────────┘
-      -->
-
-      <a href="assets/complex-curve-3d/" class="project-card p-stagger">
-        <div class="card-thumb">
-          <div class="card-thumb-placeholder">🌀</div>
-        </div>
-        <div class="card-body">
-          <span class="card-title">Complex Curve 3D</span>
-          <div class="card-arrow">
-            <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-          </div>
-        </div>
-      </a>
-    </div>
-
-    <div class="empty-state">
+    <div class="project-grid" id="math-grid"></div>
+    <div class="empty-state" id="math-empty">
       <div class="empty-icon">∑</div>
       <div class="empty-title">Nothing here yet</div>
       <div class="empty-sub">Math visualizations coming soon</div>
@@ -659,66 +630,8 @@
       <div class="section-icon physics">⚛</div>
       <h2 class="section-title physics-title">Physics</h2>
     </div>
-
-    <div class="project-grid">
-      <!--
-        ┌────────────────────────────────────────────────────┐
-        │  HOW TO ADD A PHYSICS PROJECT CARD                 │
-        │  Same pattern as math — copy an <a> block,         │
-        │  change href and title.                            │
-        └────────────────────────────────────────────────────┘
-      -->
-
-      <a href="assets/wave-packet/" class="project-card p-stagger">
-        <div class="card-thumb">
-          <div class="card-thumb-placeholder">🌊</div>
-        </div>
-        <div class="card-body">
-          <span class="card-title">Wave Interference & Packet</span>
-          <div class="card-arrow">
-            <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-          </div>
-        </div>
-      </a>
-
-      <a href="assets/matter-wave/" class="project-card p-stagger">
-        <div class="card-thumb">
-          <div class="card-thumb-placeholder">⚛</div>
-        </div>
-        <div class="card-body">
-          <span class="card-title">Matter Wave Packet</span>
-          <div class="card-arrow">
-            <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-          </div>
-        </div>
-      </a>
-
-      <a href="assets/quantum-photon/" class="project-card p-stagger">
-        <div class="card-thumb">
-          <div class="card-thumb-placeholder">💡</div>
-        </div>
-        <div class="card-body">
-          <span class="card-title">Photon Accumulation</span>
-          <div class="card-arrow">
-            <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-          </div>
-        </div>
-      </a>
-
-      <a href="assets/quantum-wave-particle/" class="project-card p-stagger">
-        <div class="card-thumb">
-          <div class="card-thumb-placeholder">⟨ψ⟩</div>
-        </div>
-        <div class="card-body">
-          <span class="card-title">Wave-Particle Duality</span>
-          <div class="card-arrow">
-            <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-          </div>
-        </div>
-      </a>
-    </div>
-
-    <div class="empty-state">
+    <div class="project-grid" id="physics-grid"></div>
+    <div class="empty-state" id="physics-empty">
       <div class="empty-icon">⚛</div>
       <div class="empty-title">Nothing here yet</div>
       <div class="empty-sub">Physics visualizations coming soon</div>
@@ -727,8 +640,9 @@
 
 </div>
 
+<script src="public/projects.js"></script>
 <script>
-// ═══════════ SCREEN TRANSITIONS ═══════════
+// ═══════════ DYNAMIC PROJECT LOADING ═══════════
 const screens = {
   welcome:    document.getElementById('welcome'),
   categories: document.getElementById('categories'),
@@ -737,18 +651,58 @@ const screens = {
 
 const mathSection    = document.getElementById('math-section');
 const physicsSection = document.getElementById('physics-section');
+const mathGrid       = document.getElementById('math-grid');
+const physicsGrid    = document.getElementById('physics-grid');
+const mathEmpty      = document.getElementById('math-empty');
+const physicsEmpty   = document.getElementById('physics-empty');
 
-// Auto-hide empty states in any section that has project cards
-function updateEmptyStates() {
-  [mathSection, physicsSection].forEach(section => {
-    const emptyEl = section.querySelector('.empty-state');
-    if (!emptyEl) return;
-    const hasCards = section.querySelectorAll('.project-card').length > 0;
-    emptyEl.style.display = hasCards ? 'none' : '';
+// Build a single project card element
+function createCard(project) {
+  const href = `public/${project.category}/${project.folder}/`;
+  const a = document.createElement('a');
+  a.href = href;
+  a.className = 'project-card p-stagger';
+
+  a.innerHTML = `
+    <div class="card-thumb">
+      <div class="card-thumb-placeholder">${project.emoji}</div>
+    </div>
+    <div class="card-body">
+      <span class="card-title">${project.title}</span>
+      <div class="card-arrow">
+        <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+      </div>
+    </div>`;
+
+  // spotlight follow on hover
+  a.addEventListener('mousemove', e => {
+    const r = a.getBoundingClientRect();
+    a.style.setProperty('--mouse-x', (e.clientX - r.left) + 'px');
+    a.style.setProperty('--mouse-y', (e.clientY - r.top) + 'px');
   });
-}
-updateEmptyStates();
 
+  return a;
+}
+
+// Populate grids from the PROJECTS manifest (loaded via script tag)
+let mathCount = 0, physicsCount = 0;
+
+PROJECTS.forEach(p => {
+  const card = createCard(p);
+  if (p.category === 'math') {
+    mathGrid.appendChild(card);
+    mathCount++;
+  } else if (p.category === 'physics') {
+    physicsGrid.appendChild(card);
+    physicsCount++;
+  }
+});
+
+// toggle empty states
+mathEmpty.style.display    = mathCount > 0 ? 'none' : '';
+physicsEmpty.style.display = physicsCount > 0 ? 'none' : '';
+
+// ═══════════ SCREEN TRANSITIONS ═══════════
 function transition(from, to, setup) {
   from.classList.add('fade-out');
   setTimeout(() => {
@@ -757,11 +711,10 @@ function transition(from, to, setup) {
     if (setup) setup();
     to.classList.remove('hidden');
     to.classList.add('fade-in-active');
-    // reset then re-trigger stagger animations on visible elements
     to.querySelectorAll('.c-stagger, .p-stagger').forEach(el => {
       if (el.closest('.hidden')) return;
       el.classList.remove('animate');
-      void el.offsetWidth; // force reflow so animation replays
+      void el.offsetWidth;
       el.classList.add('animate');
     });
     setTimeout(() => to.classList.remove('fade-in-active'), 700);
@@ -778,11 +731,9 @@ document.querySelectorAll('.cat-card').forEach(card => {
   card.addEventListener('click', () => {
     const cat = card.dataset.cat;
     transition(screens.categories, screens.projects, () => {
-      // show only the chosen section
       mathSection.classList.toggle('hidden', cat !== 'math');
       physicsSection.classList.toggle('hidden', cat !== 'physics');
 
-      // reset stagger on the visible section so animations replay
       const activeSection = cat === 'math' ? mathSection : physicsSection;
       activeSection.querySelectorAll('.p-stagger').forEach(el => {
         el.classList.remove('animate');
@@ -791,7 +742,6 @@ document.querySelectorAll('.cat-card').forEach(card => {
     });
   });
 
-  // spotlight follow
   card.addEventListener('mousemove', e => {
     const r = card.getBoundingClientRect();
     card.style.setProperty('--mx', (e.clientX - r.left) + 'px');
@@ -803,18 +753,6 @@ document.querySelectorAll('.cat-card').forEach(card => {
 document.getElementById('back-btn').addEventListener('click', () => {
   transition(screens.projects, screens.categories);
 });
-
-// ═══════════ CARD SPOTLIGHT ═══════════
-function initCardSpotlights() {
-  document.querySelectorAll('.project-card').forEach(card => {
-    card.addEventListener('mousemove', e => {
-      const r = card.getBoundingClientRect();
-      card.style.setProperty('--mouse-x', (e.clientX - r.left) + 'px');
-      card.style.setProperty('--mouse-y', (e.clientY - r.top) + 'px');
-    });
-  });
-}
-initCardSpotlights();
 
 // ═══════════ PARTICLE NETWORK ═══════════
 (function() {

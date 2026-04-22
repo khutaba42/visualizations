@@ -1,0 +1,37 @@
+[
+  {
+    "id": "complex-curve-3d",
+    "title": "Complex Curve 3D",
+    "category": "math",
+    "emoji": "🌀",
+    "folder": "complex-curve-3d"
+  },
+  {
+    "id": "wave-packet",
+    "title": "Wave Interference & Packet",
+    "category": "physics",
+    "emoji": "🌊",
+    "folder": "wave-packet"
+  },
+  {
+    "id": "matter-wave",
+    "title": "Matter Wave Packet",
+    "category": "physics",
+    "emoji": "⚛",
+    "folder": "matter-wave"
+  },
+  {
+    "id": "quantum-photon",
+    "title": "Photon Accumulation",
+    "category": "physics",
+    "emoji": "💡",
+    "folder": "quantum-photon"
+  },
+  {
+    "id": "quantum-wave-particle",
+    "title": "Wave-Particle Duality",
+    "category": "physics",
+    "emoji": "⟨ψ⟩",
+    "folder": "quantum-wave-particle"
+  }
+]
