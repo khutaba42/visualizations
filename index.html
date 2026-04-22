@@ -562,6 +562,82 @@
     opacity: 0.4;
   }
 
+  /* ───── search bar ───── */
+  .search-wrap {
+    position: relative;
+    width: 100%;
+    max-width: 360px;
+    margin: 0 auto;
+  }
+
+  .search-input {
+    width: 100%;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.85rem;
+    padding: 0.65rem 1rem 0.65rem 2.4rem;
+    border-radius: 12px;
+    outline: none;
+    transition: border-color 0.3s, background 0.3s, box-shadow 0.3s;
+  }
+
+  .search-input::placeholder {
+    color: var(--text-dim);
+    opacity: 0.6;
+  }
+
+  .search-input:focus {
+    border-color: var(--border-hover);
+    background: rgba(255, 255, 255, 0.06);
+    box-shadow: 0 0 20px rgba(108, 138, 255, 0.08);
+  }
+
+  .search-icon {
+    position: absolute;
+    left: 0.8rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 15px;
+    height: 15px;
+    stroke: var(--text-dim);
+    stroke-width: 2;
+    fill: none;
+    pointer-events: none;
+    opacity: 0.5;
+  }
+
+  /* global search on categories screen */
+  #global-search-wrap {
+    margin-top: 2.5rem;
+  }
+
+  /* search results area on categories screen */
+  #global-results {
+    width: 100%;
+    max-width: 90vw;
+    margin-top: 2rem;
+  }
+
+  #global-results .project-grid {
+    justify-content: center;
+  }
+
+  .search-no-results {
+    text-align: center;
+    color: var(--text-dim);
+    font-size: 0.88rem;
+    padding: 2rem 1rem;
+    opacity: 0.5;
+  }
+
+  /* domain search on projects screen */
+  .domain-search-wrap {
+    max-width: 320px;
+    margin: 0 0 1.5rem 0;
+  }
+
   /* ───── project entrance stagger ───── */
   .p-stagger { opacity: 0; transform: translateY(20px); }
   .p-stagger.animate { animation: el-in 0.6s cubic-bezier(0.23,1,0.32,1) forwards; }
@@ -607,6 +683,14 @@
       <div class="cat-label">Physics</div>
     </div>
   </div>
+  <div class="search-wrap c-stagger" id="global-search-wrap">
+    <svg class="search-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+    <input class="search-input" id="global-search" type="text" placeholder="Search all visualizations…" autocomplete="off">
+  </div>
+  <div id="global-results" class="hidden">
+    <div class="project-grid" id="global-results-grid"></div>
+    <div class="search-no-results hidden" id="global-no-results">No visualizations found</div>
+  </div>
 </div>
 
 <!-- ═══════════ SCREEN 3: PROJECTS ═══════════ -->
@@ -622,6 +706,10 @@
       <div class="section-icon math">∑</div>
       <h2 class="section-title math-title">Mathematics</h2>
     </div>
+    <div class="search-wrap domain-search-wrap p-stagger">
+      <svg class="search-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+      <input class="search-input domain-search" data-cat="math" type="text" placeholder="Search math…" autocomplete="off">
+    </div>
     <div class="project-grid" id="math-grid"></div>
     <div class="empty-state" id="math-empty">
       <div class="empty-icon">∑</div>
@@ -635,6 +723,10 @@
     <div class="section-header p-stagger">
       <div class="section-icon physics">⚛</div>
       <h2 class="section-title physics-title">Physics</h2>
+    </div>
+    <div class="search-wrap domain-search-wrap p-stagger">
+      <svg class="search-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+      <input class="search-input domain-search" data-cat="physics" type="text" placeholder="Search physics…" autocomplete="off">
     </div>
     <div class="project-grid" id="physics-grid"></div>
     <div class="empty-state" id="physics-empty">
@@ -708,6 +800,92 @@ PROJECTS.forEach(p => {
 mathEmpty.style.display    = mathCount > 0 ? 'none' : '';
 physicsEmpty.style.display = physicsCount > 0 ? 'none' : '';
 
+// ═══════════ SEARCH ═══════════
+const globalSearch      = document.getElementById('global-search');
+const globalResults     = document.getElementById('global-results');
+const globalResultsGrid = document.getElementById('global-results-grid');
+const globalNoResults   = document.getElementById('global-no-results');
+const catGrid           = document.querySelector('.cat-grid');
+
+// Global search — filters across ALL projects, shows results inline
+globalSearch.addEventListener('input', () => {
+  const q = globalSearch.value.trim().toLowerCase();
+
+  if (!q) {
+    globalResults.classList.add('hidden');
+    catGrid.classList.remove('hidden');
+    globalResultsGrid.innerHTML = '';
+    globalNoResults.classList.add('hidden');
+    return;
+  }
+
+  catGrid.classList.add('hidden');
+  globalResults.classList.remove('hidden');
+  globalResultsGrid.innerHTML = '';
+
+  const matches = PROJECTS.filter(p => p.title.toLowerCase().includes(q));
+
+  if (matches.length === 0) {
+    globalNoResults.classList.remove('hidden');
+  } else {
+    globalNoResults.classList.add('hidden');
+    matches.forEach((p, i) => {
+      const card = createCard(p);
+      card.style.animationDelay = (i * 0.06) + 's';
+      card.classList.add('animate');
+      globalResultsGrid.appendChild(card);
+    });
+  }
+});
+
+// Domain search — filters within the active category
+document.querySelectorAll('.domain-search').forEach(input => {
+  input.addEventListener('input', () => {
+    const q   = input.value.trim().toLowerCase();
+    const cat = input.dataset.cat;
+    const grid  = cat === 'math' ? mathGrid : physicsGrid;
+    const empty = cat === 'math' ? mathEmpty : physicsEmpty;
+
+    const cards = grid.querySelectorAll('.project-card');
+    let visible = 0;
+
+    cards.forEach(card => {
+      const title = card.querySelector('.card-title').textContent.toLowerCase();
+      const show  = !q || title.includes(q);
+      card.style.display = show ? '' : 'none';
+      if (show) visible++;
+    });
+
+    empty.style.display = visible > 0 ? 'none' : '';
+    if (visible === 0 && q) {
+      empty.querySelector('.empty-title').textContent = 'No results';
+      empty.querySelector('.empty-sub').textContent = `Nothing matching "${input.value.trim()}"`;
+    } else {
+      // restore defaults
+      const label = cat === 'math' ? 'Math' : 'Physics';
+      empty.querySelector('.empty-title').textContent = 'Nothing here yet';
+      empty.querySelector('.empty-sub').textContent = `${label} visualizations coming soon`;
+    }
+  });
+});
+
+// Clear domain search when navigating back
+document.getElementById('back-btn').addEventListener('click', () => {
+  document.querySelectorAll('.domain-search').forEach(input => {
+    input.value = '';
+    input.dispatchEvent(new Event('input'));
+  });
+});
+
+// Clear global search when navigating into a category
+function clearGlobalSearch() {
+  globalSearch.value = '';
+  globalResults.classList.add('hidden');
+  globalResultsGrid.innerHTML = '';
+  globalNoResults.classList.add('hidden');
+  catGrid.classList.remove('hidden');
+}
+
 // ═══════════ SCREEN TRANSITIONS ═══════════
 function transition(from, to, setup) {
   from.classList.add('fade-out');
@@ -736,6 +914,7 @@ document.getElementById('enter-btn').addEventListener('click', () => {
 document.querySelectorAll('.cat-card').forEach(card => {
   card.addEventListener('click', () => {
     const cat = card.dataset.cat;
+    clearGlobalSearch();
     transition(screens.categories, screens.projects, () => {
       mathSection.classList.toggle('hidden', cat !== 'math');
       physicsSection.classList.toggle('hidden', cat !== 'physics');
