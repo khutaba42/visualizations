@@ -2939,12 +2939,60 @@ input[type=range].xxs-slider {
 // 1. Setup App (UI + State)
 // WH.createApp is synchronous. We destructure the reactive state and ui helpers immediately.
 const { state, ui } = WH.createApp({
-    title: "התאבכות גלים: יצירת חבילת גלים",
+    title: "Wave Interference: Creating a Wave Packet",
     params: {
-        deltaK: { value: 1.5, min: 0.5, max: 5.0, step: 0.1, label: "מרווח מספרי גל (Δk)" },
-        reset: { type: 'button', label: 'איפוס', onClick: (s) => s.deltaK = 1.5 }
+        deltaK: { value: 1.5, min: 0.5, max: 5.0, step: 0.1, label: "Wave Number Spread (Δk)" },
+        reset: { type: 'button', label: 'Reset', onClick: (s) => s.deltaK = 1.5 }
     }
 });
+
+// --- i18n ---
+const i18n = {
+  en: {
+    title: "Wave Interference: Creating a Wave Packet",
+    deltaKLabel: "Wave Number Spread (Δk)",
+    resetLabel: "Reset",
+    showEnvelope: "Show Envelope",
+    xAxisLabel: "Space (x)",
+    yAxisLabel: "Amplitude",
+    hudWaveNumber: "Wave Number (k₀)",
+    hudSpread: "Spread (Δk)",
+    hudPacketWidth: "Packet Width (Δx)",
+    hudEnvelopePeriod: "Envelope Period (T)",
+    envelopeTag: "Wave Envelope",
+    packetTag: "Wave Packet"
+  },
+  he: {
+    title: "התאבכות גלים: יצירת חבילת גלים",
+    deltaKLabel: "מרווח מספרי גל (Δk)",
+    resetLabel: "איפוס",
+    showEnvelope: "הצג מעטפת",
+    xAxisLabel: "מרחב (x)",
+    yAxisLabel: "אמפליטודה",
+    hudWaveNumber: "מספר גל (k₀)",
+    hudSpread: "מרווח (Δk)",
+    hudPacketWidth: "רוחב חבילה (Δx)",
+    hudEnvelopePeriod: "מחזור מעטפת (T)",
+    envelopeTag: "מעטפת הגל",
+    packetTag: "חבילת גלים"
+  },
+  ar: {
+    title: "تداخل الموجات: إنشاء حزمة موجية",
+    deltaKLabel: "مدى عدد الموجة (Δk)",
+    resetLabel: "إعادة تعيين",
+    showEnvelope: "إظهار الغلاف",
+    xAxisLabel: "المكان (x)",
+    yAxisLabel: "السعة",
+    hudWaveNumber: "عدد الموجة (k₀)",
+    hudSpread: "المدى (Δk)",
+    hudPacketWidth: "عرض الحزمة (Δx)",
+    hudEnvelopePeriod: "دورة الغلاف (T)",
+    envelopeTag: "غلاف الموجة",
+    packetTag: "حزمة موجية"
+  }
+};
+let currentLang = 'en';
+function t(key) { return i18n[currentLang][key]; }
 
 // Initialize showEnvelope on state (not via params, so no bottom-bar toggle)
 state.showEnvelope = true;
@@ -2957,6 +3005,39 @@ state.showEnvelope = true;
         sliderRow.classList.add('full');
     }
 }
+
+// Language toggle — fixed position, always visible
+{
+    const langs = ['en', 'he', 'ar'];
+    const langBtn = document.createElement('button');
+    langBtn.textContent = 'EN / עב / عر';
+    langBtn.style.cssText = 'position:fixed;top:12px;right:12px;z-index:9999;background:var(--surface-container-high, #E9EBF0);border:1px solid var(--stroke-default, #DCDFE5);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;color:var(--on-surface-default, #1B1C1D);cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.15);transition:background 0.2s;';
+    langBtn.addEventListener('mouseenter', () => { langBtn.style.background = 'var(--surface-container-highest, #dee1e3)'; });
+    langBtn.addEventListener('mouseleave', () => { langBtn.style.background = 'var(--surface-container-high, #E9EBF0)'; });
+    langBtn.addEventListener('click', () => {
+        currentLang = langs[(langs.indexOf(currentLang) + 1) % langs.length];
+        document.documentElement.dir = (currentLang === 'he' || currentLang === 'ar') ? 'rtl' : 'ltr';
+        langBtn.style.right = (currentLang === 'he' || currentLang === 'ar') ? '' : '12px';
+        langBtn.style.left = (currentLang === 'he' || currentLang === 'ar') ? '12px' : '';
+        // Update title
+        const titleEl = document.querySelector('.widget-title');
+        if (titleEl) titleEl.textContent = t('title');
+        // Update param labels
+        const labels = document.querySelectorAll('.param-label');
+        labels.forEach(l => {
+            if (l.textContent.includes('Δk') || l.textContent.includes('מרווח') || l.textContent.includes('مدى')) l.textContent = t('deltaKLabel');
+        });
+        // Update button labels
+        const btns = document.querySelectorAll('.action-btn, button');
+        btns.forEach(b => {
+            if (b.textContent === 'Reset' || b.textContent === 'איפוס' || b.textContent === 'إعادة تعيين') b.textContent = t('resetLabel');
+        });
+        // Update envelope toggle label
+        if (envLblRef) envLblRef.textContent = t('showEnvelope');
+    });
+    document.body.appendChild(langBtn);
+}
+let envLblRef = null;
 
 // Place "הצג מעטפת" toggle in the header bar only
 {
@@ -2972,7 +3053,8 @@ state.showEnvelope = true;
     sw.innerHTML = '<div class="knob"></div>';
 
     const lbl = document.createElement('span');
-    lbl.textContent = 'הצג מעטפת';
+    lbl.textContent = t('showEnvelope');
+    envLblRef = lbl;
     lbl.style.cssText = 'font-size:13px;font-weight:500;color:var(--on-surface-de-emphasis);white-space:nowrap;';
 
     const update = (v) => { if(v) sw.classList.add('active'); else sw.classList.remove('active'); sw.setAttribute('aria-checked', v); };
@@ -3040,12 +3122,12 @@ WH.initCanvas('viz', (ctx) => {
         ctx.font = '700 16px sans-serif';
         ctx.textAlign = 'center';
         ctx.textAlign = 'right';
-        ctx.fillText('מרחב (x)', width - padding, height - 20);
+        ctx.fillText(t('xAxisLabel'), width - padding, height - 20);
         
         ctx.save();
         ctx.translate(20, cy);
         ctx.rotate(-Math.PI / 2);
-        ctx.fillText('אמפליטודה', 0, 0);
+        ctx.fillText(t('yAxisLabel'), 0, 0);
         ctx.restore();
 
         // --- MATH LOGIC ---
@@ -3099,10 +3181,10 @@ WH.initCanvas('viz', (ctx) => {
         const lobeWidth = (4 * Math.PI) / (3 * dk);
 
         ui.setHUD([
-            { label: "מספר גל (k₀)", value: k0 },
-            { label: "מרווח (Δk)", value: dk.toFixed(2) },
-            { label: "רוחב חבילה (Δx)", value: lobeWidth.toFixed(2) },
-            { label: "מחזור מעטפת (T)", value: ((2 * Math.PI) / dk).toFixed(2), color: '--chart-4' }
+            { label: t('hudWaveNumber'), value: k0 },
+            { label: t('hudSpread'), value: dk.toFixed(2) },
+            { label: t('hudPacketWidth'), value: lobeWidth.toFixed(2) },
+            { label: t('hudEnvelopePeriod'), value: ((2 * Math.PI) / dk).toFixed(2), color: '--chart-4' }
         ]);
 
         // --- HELPER: Draw a measurement bracket with pill label ---
@@ -3181,9 +3263,9 @@ WH.initCanvas('viz', (ctx) => {
 
         // UI Tags for clarification
         if (state.showEnvelope) {
-            ctx.drawTag('מעטפת הגל', xScale(-6), yScale(2.8), '--chart-4');
+            ctx.drawTag(t('envelopeTag'), xScale(-6), yScale(2.8), '--chart-4');
         }
-        ctx.drawTag('חבילת גלים', cx, yScale(3.2), '--primary');
+        ctx.drawTag(t('packetTag'), cx, yScale(3.2), '--primary');
     };
 });
 </script></body>

@@ -3475,13 +3475,89 @@
 
         // 1. Setup App (UI + State)
         const { state, ui } = WH.createApp({
-            title: "דואליות גל-חלקיק: צבירת פוטונים",
+            title: "Wave-Particle Duality: Photon Accumulation",
             params: {
-                flux: { value: 5, min: 1, max: 200, label: "שטף פוטונים (קצב)" },
-                mode: { value: 'Double Slit', options: ['Double Slit', 'Single Slit'], label: "מערך ניסוי" },
-                clear: { type: 'button', label: 'איפוס גלאי', onClick: (s) => resetDetector(s) }
+                flux: { value: 5, min: 1, max: 200, label: "Photon Flux (rate)" },
+                mode: { value: 'Double Slit', options: ['Double Slit', 'Single Slit'], label: "Experiment Setup" },
+                clear: { type: 'button', label: 'Reset Detector', onClick: (s) => resetDetector(s) }
             }
         });
+
+        // --- i18n ---
+        const i18n = {
+          en: {
+            title: "Wave-Particle Duality: Photon Accumulation",
+            fluxLabel: "Photon Flux (rate)",
+            modeLabel: "Experiment Setup",
+            clearLabel: "Reset Detector",
+            classicalPrediction: "Classical Wave Prediction",
+            hudTotalPhotons: "Total Photons Detected",
+            hudNature: "Nature of Phenomenon",
+            natureParticle: "Particle-like (random)",
+            natureWave: "Wave-like (probabilistic)",
+            detectorScreen: "Photon Detection Screen",
+            hintFew: "Notice: Photons hit at random positions",
+            hintMany: "Notice: Accumulation reveals the wave pattern"
+          },
+          he: {
+            title: "דואליות גל-חלקיק: צבירת פוטונים",
+            fluxLabel: "שטף פוטונים (קצב)",
+            modeLabel: "מערך ניסוי",
+            clearLabel: "איפוס גלאי",
+            classicalPrediction: "תחזית גלית קלאסית",
+            hudTotalPhotons: "סך פוטונים שנמדדו",
+            hudNature: "אופי התופעה",
+            natureParticle: "חלקיקי (אקראי)",
+            natureWave: "גלי (הסתברותי)",
+            detectorScreen: "מסך גילוי פוטונים",
+            hintFew: "שימו לב: הפוטונים פוגעים במיקומים אקראיים",
+            hintMany: "שימו לב: הצבירה חושפת את התבנית הגלית"
+          },
+          ar: {
+            title: "ازدواجية الموجة-الجسيم: تراكم الفوتونات",
+            fluxLabel: "تدفق الفوتونات (المعدل)",
+            modeLabel: "إعداد التجربة",
+            clearLabel: "إعادة تعيين الكاشف",
+            classicalPrediction: "التنبؤ الموجي الكلاسيكي",
+            hudTotalPhotons: "إجمالي الفوتونات المكتشفة",
+            hudNature: "طبيعة الظاهرة",
+            natureParticle: "جسيمي (عشوائي)",
+            natureWave: "موجي (احتمالي)",
+            detectorScreen: "شاشة كشف الفوتونات",
+            hintFew: "لاحظ: الفوتونات تصطدم في مواقع عشوائية",
+            hintMany: "لاحظ: التراكم يكشف النمط الموجي"
+          }
+        };
+        let currentLang = 'en';
+        function t(key) { return i18n[currentLang][key]; }
+
+        // Language toggle — fixed position, always visible
+        {
+            const langs = ['en', 'he', 'ar'];
+            const langBtn = document.createElement('button');
+            langBtn.textContent = 'EN / עב / عر';
+            langBtn.style.cssText = 'position:fixed;top:12px;right:12px;z-index:9999;background:var(--surface-container-high, #E9EBF0);border:1px solid var(--stroke-default, #DCDFE5);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;color:var(--on-surface-default, #1B1C1D);cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.15);transition:background 0.2s;';
+            langBtn.addEventListener('mouseenter', () => { langBtn.style.background = 'var(--surface-container-highest, #dee1e3)'; });
+            langBtn.addEventListener('mouseleave', () => { langBtn.style.background = 'var(--surface-container-high, #E9EBF0)'; });
+            langBtn.addEventListener('click', () => {
+                currentLang = langs[(langs.indexOf(currentLang) + 1) % langs.length];
+                document.documentElement.dir = (currentLang === 'he' || currentLang === 'ar') ? 'rtl' : 'ltr';
+                langBtn.style.right = (currentLang === 'he' || currentLang === 'ar') ? '' : '12px';
+                langBtn.style.left = (currentLang === 'he' || currentLang === 'ar') ? '12px' : '';
+                const titleEl = document.querySelector('.widget-title');
+                if (titleEl) titleEl.textContent = t('title');
+                const labels = document.querySelectorAll('.param-label');
+                labels.forEach(l => {
+                    if (l.textContent.includes('Flux') || l.textContent.includes('flux') || l.textContent.includes('שטף') || l.textContent.includes('تدفق')) l.textContent = t('fluxLabel');
+                    if (l.textContent.includes('Setup') || l.textContent.includes('מערך') || l.textContent.includes('إعداد')) l.textContent = t('modeLabel');
+                });
+                const btns = document.querySelectorAll('.action-btn, button');
+                btns.forEach(b => {
+                    if (b.textContent.includes('Reset') || b.textContent.includes('איפוס') || b.textContent.includes('إعادة')) b.textContent = t('clearLabel');
+                });
+            });
+            document.body.appendChild(langBtn);
+        }
 
         // 2. Initialize Internal State
         state.totalPhotons = 0;
@@ -3585,7 +3661,7 @@
                 }
                 ctx.stroke();
                 ctx.setLineDash([]);
-                ctx.drawTag("תחזית גלית קלאסית", margin, curveBaseY - curveMaxH - 20);
+                ctx.drawTag(t('classicalPrediction'), margin, curveBaseY - curveMaxH - 20);
 
                 // 2. Draw Accumulated Distribution (The Histogram)
                 // This represents the "Statistical Determinism"
@@ -3619,15 +3695,15 @@
 
                 // 4. Labels and UI
                 ui.setHUD([
-                    { label: "סך פוטונים שנמדדו", value: state.totalPhotons.toLocaleString() },
-                    { label: "אופי התופעה", value: state.totalPhotons < 500 ? "חלקיקי (אקראי)" : "גלי (הסתברותי)" }
+                    { label: t('hudTotalPhotons'), value: state.totalPhotons.toLocaleString() },
+                    { label: t('hudNature'), value: state.totalPhotons < 500 ? t('natureParticle') : t('natureWave') }
                 ]);
 
                 ctx.save();
                 ctx.font = 'bold 20px Assistant, sans-serif';
                 ctx.textAlign = 'center';
                 ctx.fillStyle = WH.getColor('--on-surface-variant');
-                ctx.fillText("מסך גילוי פוטונים", width / 2, 50);
+                ctx.fillText(t('detectorScreen'), width / 2, 50);
 
                 // Stage floor
                 ctx.fillStyle = WH.getColor('--surface-container-highest');
@@ -3636,9 +3712,9 @@
 
                 // Educational hint
                 if (state.totalPhotons < 100) {
-                    ctx.drawTag("שימו לב: הפוטונים פוגעים במיקומים אקראיים", width / 2, centerY - 80);
+                    ctx.drawTag(t('hintFew'), width / 2, centerY - 80);
                 } else if (state.totalPhotons > 2000) {
-                    ctx.drawTag("שימו לב: הצבירה חושפת את התבנית הגלית", width / 2, centerY - 80);
+                    ctx.drawTag(t('hintMany'), width / 2, centerY - 80);
                 }
             };
         });

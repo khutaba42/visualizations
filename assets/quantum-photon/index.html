@@ -3471,17 +3471,103 @@
     <script>
         /**
          * סימולציה של צבירת פוטונים (Photon Accumulation)
+         * Demonstrates the transition between discrete particles (photons) and continuous image (classical light intensity).
          * מדגים את המעבר בין חלקיקים בדידים (פוטונים) לתמונה רציפה (עוצמת אור קלאסית).
+         * Drag a rectangle on the screen to select an area and see the average number of photons in that region.
          * גרור מלבן על המסך כדי לבחור אזור ולראות את המספר הממוצע של פוטונים באזור הזה.
          */
 
         const { state, ui } = WH.createApp({
-            title: "צבירת פוטונים בגלאי",
+            title: "Photon Accumulation on Detector",
             params: {
-                flux: { value: 5, min: 1, max: 2000, label: "שטף פוטונים (קצב)" },
-                clear: { type: 'button', label: "נקה מסך גילוי", onClick: (s) => { s.needsReset = true; } }
+                flux: { value: 5, min: 1, max: 2000, label: "Photon Flux (rate)" },
+                clear: { type: 'button', label: "Clear Detector Screen", onClick: (s) => { s.needsReset = true; } }
             }
         });
+
+        // --- i18n ---
+        const i18n = {
+          en: {
+            title: "Photon Accumulation on Detector",
+            fluxLabel: "Photon Flux (rate)",
+            clearLabel: "Clear Detector Screen",
+            selPhotons: "Photons in region",
+            selTime: "Time",
+            selSeconds: "seconds",
+            selAvg: "Average",
+            selPhotonsPerSec: "photons/sec",
+            detectorHint: "Sensitive detector screen — drag a rectangle to measure a region",
+            hudTotalPhotons: "Total Photons",
+            hudMode: "Mode",
+            modeContinuous: "Continuous Wave (classical)",
+            modeDiscrete: "Discrete Particles (quantum)",
+            hudRegionAvg: "Region Average",
+            photonsPerSec: "photons/sec"
+          },
+          he: {
+            title: "צבירת פוטונים בגלאי",
+            fluxLabel: "שטף פוטונים (קצב)",
+            clearLabel: "נקה מסך גילוי",
+            selPhotons: "פוטונים באזור",
+            selTime: "זמן",
+            selSeconds: "שניות",
+            selAvg: "ממוצע",
+            selPhotonsPerSec: "פוטונים/שנייה",
+            detectorHint: "מסך גילוי רגיש — גרור מלבן כדי למדוד אזור",
+            hudTotalPhotons: "סה\"כ פוטונים",
+            hudMode: "מצב",
+            modeContinuous: "גל רציף (קלאסי)",
+            modeDiscrete: "חלקיקים בדידים (קוונטי)",
+            hudRegionAvg: "ממוצע באזור",
+            photonsPerSec: "פוטונים/שנייה"
+          },
+          ar: {
+            title: "تراكم الفوتونات على الكاشف",
+            fluxLabel: "تدفق الفوتونات (المعدل)",
+            clearLabel: "مسح شاشة الكاشف",
+            selPhotons: "فوتونات في المنطقة",
+            selTime: "الزمن",
+            selSeconds: "ثوانٍ",
+            selAvg: "المتوسط",
+            selPhotonsPerSec: "فوتون/ثانية",
+            detectorHint: "شاشة كاشف حساسة — اسحب مستطيلاً لقياس منطقة",
+            hudTotalPhotons: "إجمالي الفوتونات",
+            hudMode: "الوضع",
+            modeContinuous: "موجة مستمرة (كلاسيكي)",
+            modeDiscrete: "جسيمات منفصلة (كمّي)",
+            hudRegionAvg: "متوسط المنطقة",
+            photonsPerSec: "فوتون/ثانية"
+          }
+        };
+        let currentLang = 'en';
+        function t(key) { return i18n[currentLang][key]; }
+
+        // Language toggle — fixed position, always visible
+        {
+            const langs = ['en', 'he', 'ar'];
+            const langBtn = document.createElement('button');
+            langBtn.textContent = 'EN / עב / عر';
+            langBtn.style.cssText = 'position:fixed;top:12px;right:12px;z-index:9999;background:var(--surface-container-high, #E9EBF0);border:1px solid var(--stroke-default, #DCDFE5);border-radius:8px;padding:6px 12px;font-size:12px;font-weight:600;color:var(--on-surface-default, #1B1C1D);cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.15);transition:background 0.2s;';
+            langBtn.addEventListener('mouseenter', () => { langBtn.style.background = 'var(--surface-container-highest, #dee1e3)'; });
+            langBtn.addEventListener('mouseleave', () => { langBtn.style.background = 'var(--surface-container-high, #E9EBF0)'; });
+            langBtn.addEventListener('click', () => {
+                currentLang = langs[(langs.indexOf(currentLang) + 1) % langs.length];
+                document.documentElement.dir = (currentLang === 'he' || currentLang === 'ar') ? 'rtl' : 'ltr';
+                langBtn.style.right = (currentLang === 'he' || currentLang === 'ar') ? '' : '12px';
+                langBtn.style.left = (currentLang === 'he' || currentLang === 'ar') ? '12px' : '';
+                const titleEl = document.querySelector('.widget-title');
+                if (titleEl) titleEl.textContent = t('title');
+                const labels = document.querySelectorAll('.param-label');
+                labels.forEach(l => {
+                    if (l.textContent.includes('Flux') || l.textContent.includes('flux') || l.textContent.includes('שטף') || l.textContent.includes('تدفق')) l.textContent = t('fluxLabel');
+                });
+                const btns = document.querySelectorAll('.action-btn, button');
+                btns.forEach(b => {
+                    if (b.textContent.includes('Clear') || b.textContent.includes('נקה') || b.textContent.includes('مسح')) b.textContent = t('clearLabel');
+                });
+            });
+            document.body.appendChild(langBtn);
+        }
 
         state.totalPhotons = 0;
         state.needsReset = true;
@@ -3585,9 +3671,9 @@
                 if (selRect && selElapsed > 0) {
                     const avg = selPhotons / selElapsed;
                     const labelLines = [
-                        `פוטונים באזור: ${selPhotons.toLocaleString()}`,
-                        `זמן: ${selElapsed.toFixed(1)} שניות`,
-                        `ממוצע: ${avg.toFixed(1)} פוטונים/שנייה`,
+                        `${t('selPhotons')}: ${selPhotons.toLocaleString()}`,
+                        `${t('selTime')}: ${selElapsed.toFixed(1)} ${t('selSeconds')}`,
+                        `${t('selAvg')}: ${avg.toFixed(1)} ${t('selPhotonsPerSec')}`,
                     ];
 
                     oCtx.font = '600 13px "Google Sans", sans-serif';
@@ -3637,7 +3723,7 @@
                     ctx.fillStyle = WH.getColor('--on-surface-de-emphasis');
                     ctx.font = '14px "Google Sans", sans-serif';
                     ctx.textAlign = 'right';
-                    ctx.fillText('מסך גילוי רגיש — גרור מלבן כדי למדוד אזור', width - 15, 30);
+                    ctx.fillText(t('detectorHint'), width - 15, 30);
                     ctx.restore();
                     state.totalPhotons = 0;
                     selRect = null;
@@ -3673,11 +3759,11 @@
                 drawOverlay(width, height);
 
                 const hudItems = [
-                    { label: "סה\"כ פוטונים", value: state.totalPhotons.toLocaleString() },
-                    { label: "מצב", value: state.flux > 500 ? "גל רציף (קלאסי)" : "חלקיקים בדידים (קוונטי)" }
+                    { label: t('hudTotalPhotons'), value: state.totalPhotons.toLocaleString() },
+                    { label: t('hudMode'), value: state.flux > 500 ? t('modeContinuous') : t('modeDiscrete') }
                 ];
                 if (selRect && selElapsed > 0) {
-                    hudItems.push({ label: "ממוצע באזור", value: (selPhotons / selElapsed).toFixed(1) + " פוטונים/שנייה" });
+                    hudItems.push({ label: t('hudRegionAvg'), value: (selPhotons / selElapsed).toFixed(1) + " " + t('photonsPerSec') });
                 }
                 ui.setHUD(hudItems);
             };
