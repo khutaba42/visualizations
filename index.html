@@ -27,7 +27,8 @@
     --physics2: #fb923c;
     --topbar-bg: rgba(10, 10, 15, 0.82);
     --particle-color: 108, 138, 255;
-    --sym-color: rgba(108, 138, 255, 0.06);
+    --sym-color: rgba(108, 138, 255, 0.18);
+    --bg-intensity: 3;
     --grain-opacity: 0.5;
   }
 
@@ -49,7 +50,7 @@
     --physics2: #ea580c;
     --topbar-bg: rgba(244, 245, 247, 0.88);
     --particle-color: 79, 109, 245;
-    --sym-color: rgba(79, 109, 245, 0.08);
+    --sym-color: rgba(79, 109, 245, 0.22);
     --grain-opacity: 0.15;
   }
 
@@ -291,47 +292,148 @@
     font-weight: 500;
   }
 
-  /* toggle switch */
-  .toggle {
+  /* theme switcher — sun/moon pill */
+  .theme-switch {
     position: relative;
-    width: 44px;
-    height: 24px;
-    background: rgba(255,255,255,0.1);
-    border-radius: 12px;
+    width: 64px;
+    height: 30px;
+    background: linear-gradient(135deg, #1a1a3e 0%, #2d1b69 100%);
+    border-radius: 15px;
     cursor: pointer;
-    transition: background 0.3s;
-    flex-shrink: 0;
     border: none;
     padding: 0;
+    flex-shrink: 0;
+    overflow: hidden;
+    transition: background 0.5s cubic-bezier(0.23,1,0.32,1);
   }
 
-  .toggle::after {
-    content: '';
+  .theme-switch.active {
+    background: linear-gradient(135deg, #87CEEB 0%, #48b1f3 100%);
+  }
+
+  /* stars in dark mode */
+  .theme-switch-stars {
+    position: absolute;
+    inset: 0;
+    transition: opacity 0.4s;
+  }
+
+  .theme-switch.active .theme-switch-stars { opacity: 0; }
+
+  .theme-switch-star {
+    position: absolute;
+    width: 2px;
+    height: 2px;
+    background: #fff;
+    border-radius: 50%;
+    animation: twinkle 2s ease-in-out infinite alternate;
+  }
+
+  .theme-switch-star:nth-child(1) { top: 6px; left: 36px; animation-delay: 0s; }
+  .theme-switch-star:nth-child(2) { top: 14px; left: 44px; animation-delay: 0.7s; }
+  .theme-switch-star:nth-child(3) { top: 22px; left: 38px; animation-delay: 1.3s; }
+  .theme-switch-star:nth-child(4) { top: 8px; left: 50px; animation-delay: 0.4s; }
+  .theme-switch-star:nth-child(5) { top: 18px; left: 52px; animation-delay: 1s; }
+
+  @keyframes twinkle {
+    0% { opacity: 0.3; transform: scale(0.8); }
+    100% { opacity: 1; transform: scale(1.2); }
+  }
+
+  /* clouds in light mode */
+  .theme-switch-clouds {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.4s;
+  }
+
+  .theme-switch.active .theme-switch-clouds { opacity: 1; }
+
+  .theme-switch-cloud {
+    position: absolute;
+    background: rgba(255,255,255,0.5);
+    border-radius: 10px;
+    height: 6px;
+  }
+
+  .theme-switch-cloud:nth-child(1) { width: 12px; top: 8px; left: 35px; }
+  .theme-switch-cloud:nth-child(2) { width: 8px; top: 18px; left: 42px; }
+
+  /* the orb (moon → sun) */
+  .theme-switch-orb {
     position: absolute;
     top: 3px;
     left: 3px;
-    width: 18px;
-    height: 18px;
+    width: 24px;
+    height: 24px;
     border-radius: 50%;
-    background: var(--text-dim);
-    transition: transform 0.3s cubic-bezier(0.23,1,0.32,1), background 0.3s;
+    background: #c4c4c4;
+    box-shadow: inset -3px -1px 0 0 rgba(0,0,0,0.15), 0 0 8px rgba(200,200,200,0.3);
+    transition: transform 0.5s cubic-bezier(0.23,1,0.32,1),
+                background 0.5s,
+                box-shadow 0.5s;
   }
 
-  .toggle.active {
-    background: var(--accent);
+  /* moon craters */
+  .theme-switch-orb::before,
+  .theme-switch-orb::after {
+    content: '';
+    position: absolute;
+    border-radius: 50%;
+    background: rgba(0,0,0,0.08);
+    transition: opacity 0.4s;
+  }
+  .theme-switch-orb::before { width: 5px; height: 5px; top: 4px; left: 5px; }
+  .theme-switch-orb::after { width: 3px; height: 3px; top: 13px; left: 12px; }
+
+  .theme-switch.active .theme-switch-orb {
+    transform: translateX(34px);
+    background: #FFD700;
+    box-shadow: 0 0 12px rgba(255,215,0,0.6), 0 0 24px rgba(255,165,0,0.3);
   }
 
-  .toggle.active::after {
-    transform: translateX(20px);
-    background: #fff;
+  .theme-switch.active .theme-switch-orb::before,
+  .theme-switch.active .theme-switch-orb::after {
+    opacity: 0;
   }
 
-  body.light .toggle {
+  /* range slider */
+  .settings-slider {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 110px;
+    height: 6px;
+    border-radius: 3px;
+    background: rgba(255,255,255,0.1);
+    outline: none;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  body.light .settings-slider {
     background: rgba(0,0,0,0.1);
   }
 
-  body.light .toggle.active {
+  .settings-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
     background: var(--accent);
+    cursor: pointer;
+    box-shadow: 0 0 8px var(--accent-glow);
+  }
+
+  .settings-slider::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 0 8px var(--accent-glow);
   }
 
   /* ═════════════════════════════════════
@@ -819,8 +921,25 @@
     <div class="settings-panel hidden" id="settings-panel">
       <div class="settings-heading">Settings</div>
       <div class="settings-row">
-        <span class="settings-label">Light mode</span>
-        <button class="toggle" id="theme-toggle" title="Toggle light/dark mode"></button>
+        <span class="settings-label">Theme</span>
+        <button class="theme-switch" id="theme-toggle" title="Toggle light/dark mode">
+          <div class="theme-switch-stars">
+            <span class="theme-switch-star"></span>
+            <span class="theme-switch-star"></span>
+            <span class="theme-switch-star"></span>
+            <span class="theme-switch-star"></span>
+            <span class="theme-switch-star"></span>
+          </div>
+          <div class="theme-switch-clouds">
+            <span class="theme-switch-cloud"></span>
+            <span class="theme-switch-cloud"></span>
+          </div>
+          <div class="theme-switch-orb"></div>
+        </button>
+      </div>
+      <div class="settings-row">
+        <span class="settings-label">BG effects</span>
+        <input type="range" class="settings-slider" id="bg-intensity" min="1" max="5" step="1" value="3" title="Background effects intensity">
       </div>
     </div>
   </div>
@@ -1089,6 +1208,9 @@ document.querySelectorAll('.cat-card').forEach(card => {
   });
 });
 
+// ═══════════ BG INTENSITY (declared early so particles can read it) ═══════════
+let bgIntensity = 3;
+
 // ═══════════ PARTICLE NETWORK ═══════════
 (function() {
   const canvas = document.getElementById('bg-canvas');
@@ -1111,7 +1233,7 @@ document.querySelectorAll('.cat-card').forEach(card => {
     reset() {
       this.x = Math.random() * w; this.y = Math.random() * h;
       this.vx = (Math.random() - 0.5) * 0.3; this.vy = (Math.random() - 0.5) * 0.3;
-      this.r = Math.random() * 1.5 + 0.5; this.a = Math.random() * 0.3 + 0.05;
+      this.r = Math.random() * 1.5 + 0.5; this.baseA = Math.random() * 0.3 + 0.05;
     }
     update() {
       this.x += this.vx; this.y += this.vy;
@@ -1126,7 +1248,8 @@ document.querySelectorAll('.cat-card').forEach(card => {
     }
     draw() {
       ctx.beginPath(); ctx.arc(this.x, this.y, this.r, 0, Math.PI*2);
-      ctx.fillStyle = `rgba(${pColor},${this.a})`; ctx.fill();
+      const mul = [0.4, 0.7, 1, 1.6, 2.5][bgIntensity - 1];
+      ctx.fillStyle = `rgba(${pColor},${Math.min(this.baseA * mul, 1)})`; ctx.fill();
     }
   }
 
@@ -1144,7 +1267,8 @@ document.querySelectorAll('.cat-card').forEach(card => {
           ctx.beginPath();
           ctx.moveTo(particles[i].x, particles[i].y);
           ctx.lineTo(particles[j].x, particles[j].y);
-          ctx.strokeStyle = `rgba(${pColor},${(1 - d/150)*0.08})`;
+          const lineMul = [0.4, 0.7, 1, 1.6, 2.5][bgIntensity - 1];
+          ctx.strokeStyle = `rgba(${pColor},${Math.min((1 - d/150)*0.08*lineMul, 0.5)})`;
           ctx.lineWidth = 0.5; ctx.stroke();
         }
       }
@@ -1185,6 +1309,42 @@ try {
     themeToggle.classList.add('active');
   }
 } catch(e) {}
+
+// Background intensity slider
+const bgSlider = document.getElementById('bg-intensity');
+
+function applyBgIntensity(level) {
+  bgIntensity = level;
+  // Symbol opacity: level 1 = 0.06, 2 = 0.12, 3 = 0.18, 4 = 0.28, 5 = 0.4
+  const symAlphas = [0.06, 0.12, 0.18, 0.28, 0.4];
+  const symAlphasLight = [0.08, 0.15, 0.22, 0.32, 0.45];
+  const isLight = document.body.classList.contains('light');
+  const alpha = isLight ? symAlphasLight[level - 1] : symAlphas[level - 1];
+  const rgb = isLight ? '79, 109, 245' : '108, 138, 255';
+  document.documentElement.style.setProperty('--sym-color', `rgba(${rgb}, ${alpha})`);
+  document.documentElement.style.setProperty('--bg-intensity', level);
+}
+
+bgSlider.addEventListener('input', () => {
+  const v = parseInt(bgSlider.value);
+  applyBgIntensity(v);
+  try { localStorage.setItem('bgIntensity', v); } catch(e) {}
+});
+
+// Restore saved intensity
+try {
+  const saved = localStorage.getItem('bgIntensity');
+  if (saved) {
+    bgIntensity = parseInt(saved);
+    bgSlider.value = bgIntensity;
+    applyBgIntensity(bgIntensity);
+  }
+} catch(e) {}
+
+// Re-apply intensity when theme changes so colors stay correct
+themeToggle.addEventListener('click', () => {
+  setTimeout(() => applyBgIntensity(bgIntensity), 50);
+});
 
 // ═══════════ FLOATING SYMBOLS ═══════════
 (function() {
