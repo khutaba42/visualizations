@@ -182,6 +182,13 @@
     50%      { background-position: 100% 50%; }
   }
 
+  body.light .top-title {
+    background: linear-gradient(135deg, #1a1a2e 0%, var(--accent) 50%, var(--accent2) 100%);
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    background-clip: text;
+  }
+
   .top-sub {
     font-size: 0.68rem;
     color: var(--text-dim);
@@ -233,10 +240,10 @@
 
   /* ───── settings panel ───── */
   .settings-panel {
-    position: fixed;
-    top: 60px;
-    right: 1.5rem;
-    z-index: 20;
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    z-index: 100;
     width: 260px;
     background: #1a1a24;
     border: 1px solid rgba(255,255,255,0.1);
@@ -481,43 +488,12 @@
      SCREEN 3: PROJECT VIEW
      ═════════════════════════════════════ */
   #projects {
-    padding: 2rem;
+    padding: 100px 2rem 2rem;
     width: 100%;
     max-width: 90vw;
     margin: 0 auto;
     align-items: stretch;
     justify-content: flex-start;
-    padding-top: 4rem;
-  }
-
-  /* back button */
-  .back-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 0.5rem;
-    background: none;
-    border: 1px solid var(--border);
-    color: var(--text-dim);
-    font-family: 'JetBrains Mono', monospace;
-    font-size: 0.78rem;
-    padding: 0.5rem 1rem;
-    border-radius: 10px;
-    cursor: pointer;
-    transition: all 0.3s;
-    margin-bottom: 2.5rem;
-  }
-
-  .back-btn:hover {
-    color: var(--text);
-    border-color: var(--border-hover);
-    background: var(--bg-card);
-  }
-
-  .back-btn svg {
-    width: 14px; height: 14px;
-    stroke: currentColor;
-    stroke-width: 2;
-    fill: none;
   }
 
   /* section header */
@@ -567,6 +543,18 @@
     background: linear-gradient(135deg, #fff, var(--physics));
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  body.light .section-title.math-title {
+    background: linear-gradient(135deg, #1a1a2e, var(--accent));
+    -webkit-background-clip: text;
+    background-clip: text;
+  }
+
+  body.light .section-title.physics-title {
+    background: linear-gradient(135deg, #1a1a2e, var(--physics));
+    -webkit-background-clip: text;
     background-clip: text;
   }
 
@@ -787,12 +775,6 @@
     opacity: 0.5;
   }
 
-  /* domain search on projects screen */
-  .domain-search-wrap {
-    max-width: 320px;
-    margin: 0 0 1.5rem 0;
-  }
-
   /* ───── project entrance stagger ───── */
   .p-stagger { opacity: 0; transform: translateY(20px); }
   .p-stagger.animate { animation: el-in 0.6s cubic-bezier(0.23,1,0.32,1) forwards; }
@@ -830,17 +812,17 @@
     <svg class="search-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
     <input class="search-input" id="global-search" type="text" placeholder="Search all visualizations…" autocomplete="off">
   </div>
-  <button class="top-settings" id="settings-btn" title="Settings">
-    <svg viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
-  </button>
-</div>
-
-<!-- ═══════════ SETTINGS PANEL ═══════════ -->
-<div class="settings-panel hidden" id="settings-panel">
-  <div class="settings-heading">Settings</div>
-  <div class="settings-row">
-    <span class="settings-label">Light mode</span>
-    <button class="toggle" id="theme-toggle" title="Toggle light/dark mode"></button>
+  <div style="position:relative;">
+    <button class="top-settings" id="settings-btn" title="Settings">
+      <svg viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+    </button>
+    <div class="settings-panel hidden" id="settings-panel">
+      <div class="settings-heading">Settings</div>
+      <div class="settings-row">
+        <span class="settings-label">Light mode</span>
+        <button class="toggle" id="theme-toggle" title="Toggle light/dark mode"></button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -868,20 +850,12 @@
 
 <!-- ═══════════ SCREEN 3: PROJECTS ═══════════ -->
 <div class="screen hidden" id="projects">
-  <button class="back-btn" id="back-btn">
-    <svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
-    Back
-  </button>
 
   <!-- ── MATH SECTION ── -->
   <div id="math-section" class="hidden">
     <div class="section-header p-stagger">
       <div class="section-icon math">∑</div>
       <h2 class="section-title math-title">Mathematics</h2>
-    </div>
-    <div class="search-wrap domain-search-wrap p-stagger">
-      <svg class="search-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-      <input class="search-input domain-search" data-cat="math" type="text" placeholder="Search math…" autocomplete="off">
     </div>
     <div class="project-grid" id="math-grid"></div>
     <div class="empty-state" id="math-empty">
@@ -896,10 +870,6 @@
     <div class="section-header p-stagger">
       <div class="section-icon physics">⚛</div>
       <h2 class="section-title physics-title">Physics</h2>
-    </div>
-    <div class="search-wrap domain-search-wrap p-stagger">
-      <svg class="search-icon" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-      <input class="search-input domain-search" data-cat="physics" type="text" placeholder="Search physics…" autocomplete="off">
     </div>
     <div class="project-grid" id="physics-grid"></div>
     <div class="empty-state" id="physics-empty">
@@ -983,22 +953,50 @@ const globalResults     = document.getElementById('global-results');
 const globalResultsGrid = document.getElementById('global-results-grid');
 const globalNoResults   = document.getElementById('global-no-results');
 
-// Global search — hides whatever screen is visible and shows results
+// track which screen + category is active
+let activeScreen = 'categories';
+let activeCat = null;
+
+// Single search bar — context-aware
 globalSearch.addEventListener('input', () => {
   const q = globalSearch.value.trim().toLowerCase();
 
+  // If inside a domain, filter that domain's grid directly
+  if (activeScreen === 'projects' && activeCat) {
+    const grid  = activeCat === 'math' ? mathGrid : physicsGrid;
+    const empty = activeCat === 'math' ? mathEmpty : physicsEmpty;
+    const cards = grid.querySelectorAll('.project-card');
+    let visible = 0;
+
+    cards.forEach(card => {
+      const title = card.querySelector('.card-title').textContent.toLowerCase();
+      const show  = !q || title.includes(q);
+      card.style.display = show ? '' : 'none';
+      if (show) visible++;
+    });
+
+    empty.style.display = visible > 0 ? 'none' : '';
+    if (visible === 0 && q) {
+      empty.querySelector('.empty-title').textContent = 'No results';
+      empty.querySelector('.empty-sub').textContent = `Nothing matching "${globalSearch.value.trim()}"`;
+    } else {
+      const label = activeCat === 'math' ? 'Math' : 'Physics';
+      empty.querySelector('.empty-title').textContent = 'Nothing here yet';
+      empty.querySelector('.empty-sub').textContent = `${label} visualizations coming soon`;
+    }
+    return;
+  }
+
+  // On categories screen — search across all projects
   if (!q) {
     globalResults.classList.add('hidden');
     globalResultsGrid.innerHTML = '';
     globalNoResults.classList.add('hidden');
-    // restore whichever screen was active
-    screens[activeScreen].classList.remove('hidden');
+    screens.categories.classList.remove('hidden');
     return;
   }
 
-  // hide both screens, show results
   screens.categories.classList.add('hidden');
-  screens.projects.classList.add('hidden');
   globalResults.classList.remove('hidden');
   globalResultsGrid.innerHTML = '';
 
@@ -1017,57 +1015,25 @@ globalSearch.addEventListener('input', () => {
   }
 });
 
-// Domain search — filters within the active category
-document.querySelectorAll('.domain-search').forEach(input => {
-  input.addEventListener('input', () => {
-    const q   = input.value.trim().toLowerCase();
-    const cat = input.dataset.cat;
-    const grid  = cat === 'math' ? mathGrid : physicsGrid;
-    const empty = cat === 'math' ? mathEmpty : physicsEmpty;
-
-    const cards = grid.querySelectorAll('.project-card');
-    let visible = 0;
-
-    cards.forEach(card => {
-      const title = card.querySelector('.card-title').textContent.toLowerCase();
-      const show  = !q || title.includes(q);
-      card.style.display = show ? '' : 'none';
-      if (show) visible++;
-    });
-
-    empty.style.display = visible > 0 ? 'none' : '';
-    if (visible === 0 && q) {
-      empty.querySelector('.empty-title').textContent = 'No results';
-      empty.querySelector('.empty-sub').textContent = `Nothing matching "${input.value.trim()}"`;
-    } else {
-      // restore defaults
-      const label = cat === 'math' ? 'Math' : 'Physics';
-      empty.querySelector('.empty-title').textContent = 'Nothing here yet';
-      empty.querySelector('.empty-sub').textContent = `${label} visualizations coming soon`;
-    }
-  });
-});
-
-// Clear domain search when navigating back
-document.getElementById('back-btn').addEventListener('click', () => {
-  document.querySelectorAll('.domain-search').forEach(input => {
-    input.value = '';
-    input.dispatchEvent(new Event('input'));
-  });
-});
-
-// Clear global search
-function clearGlobalSearch() {
+function clearSearch() {
   globalSearch.value = '';
   globalResults.classList.add('hidden');
   globalResultsGrid.innerHTML = '';
   globalNoResults.classList.add('hidden');
+  // restore card visibility in domain grids
+  [mathGrid, physicsGrid].forEach(grid => {
+    grid.querySelectorAll('.project-card').forEach(c => c.style.display = '');
+  });
+  [mathEmpty, physicsEmpty].forEach((empty, i) => {
+    const grid = i === 0 ? mathGrid : physicsGrid;
+    const label = i === 0 ? 'Math' : 'Physics';
+    empty.style.display = grid.querySelectorAll('.project-card').length > 0 ? 'none' : '';
+    empty.querySelector('.empty-title').textContent = 'Nothing here yet';
+    empty.querySelector('.empty-sub').textContent = `${label} visualizations coming soon`;
+  });
 }
 
 // ═══════════ SCREEN TRANSITIONS ═══════════
-// track which screen is "active" so search can restore it
-let activeScreen = 'categories';
-
 function transition(from, to, setup) {
   from.classList.add('fade-out');
   setTimeout(() => {
@@ -1088,21 +1054,19 @@ function transition(from, to, setup) {
 
 // Home button (logo) → back to categories
 document.getElementById('home-btn').addEventListener('click', () => {
-  clearGlobalSearch();
+  clearSearch();
   if (activeScreen === 'categories') return;
-  document.querySelectorAll('.domain-search').forEach(input => {
-    input.value = '';
-    input.dispatchEvent(new Event('input'));
-  });
   transition(screens.projects, screens.categories);
   activeScreen = 'categories';
+  activeCat = null;
+  globalSearch.placeholder = 'Search all visualizations…';
 });
 
 // Category cards → Projects
 document.querySelectorAll('.cat-card').forEach(card => {
   card.addEventListener('click', () => {
     const cat = card.dataset.cat;
-    clearGlobalSearch();
+    clearSearch();
     transition(screens.categories, screens.projects, () => {
       mathSection.classList.toggle('hidden', cat !== 'math');
       physicsSection.classList.toggle('hidden', cat !== 'physics');
@@ -1114,6 +1078,8 @@ document.querySelectorAll('.cat-card').forEach(card => {
       });
     });
     activeScreen = 'projects';
+    activeCat = cat;
+    globalSearch.placeholder = `Search ${cat === 'math' ? 'math' : 'physics'}…`;
   });
 
   card.addEventListener('mousemove', e => {
@@ -1121,13 +1087,6 @@ document.querySelectorAll('.cat-card').forEach(card => {
     card.style.setProperty('--mx', (e.clientX - r.left) + 'px');
     card.style.setProperty('--my', (e.clientY - r.top) + 'px');
   });
-});
-
-// Back → Categories
-document.getElementById('back-btn').addEventListener('click', () => {
-  clearGlobalSearch();
-  transition(screens.projects, screens.categories);
-  activeScreen = 'categories';
 });
 
 // ═══════════ PARTICLE NETWORK ═══════════
@@ -1138,7 +1097,6 @@ document.getElementById('back-btn').addEventListener('click', () => {
   let pColor = getComputedStyle(document.documentElement).getPropertyValue('--particle-color').trim() || '108,138,255';
 
   // update particle color when theme changes
-  const origToggle = themeToggle.onclick;
   new MutationObserver(() => {
     pColor = getComputedStyle(document.documentElement).getPropertyValue('--particle-color').trim() || '108,138,255';
   }).observe(document.body, { attributes: true, attributeFilter: ['class'] });
