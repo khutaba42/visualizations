@@ -1,13 +1,851 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<title>Math Visualizations</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Visualizations</title>
 <base href="/visualizations/">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=JetBrains+Mono:wght@400;600&display=swap');
+
+  *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+  :root {
+    --bg: #0a0a0f;
+    --bg-card: rgba(255, 255, 255, 0.03);
+    --bg-card-hover: rgba(255, 255, 255, 0.07);
+    --border: rgba(255, 255, 255, 0.06);
+    --border-hover: rgba(120, 160, 255, 0.3);
+    --text: #e8e8ef;
+    --text-dim: #6b6b80;
+    --accent: #6c8aff;
+    --accent-glow: rgba(108, 138, 255, 0.4);
+    --accent2: #a78bfa;
+    --accent3: #67e8f9;
+    --physics: #f472b6;
+    --physics-glow: rgba(244, 114, 182, 0.4);
+    --physics2: #fb923c;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* ───── background canvas ───── */
+  #bg-canvas {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  /* ───── floating symbols ───── */
+  .bg-symbols {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+
+  .bg-sym {
+    position: absolute;
+    font-family: 'JetBrains Mono', monospace;
+    color: rgba(108, 138, 255, 0.06);
+    font-size: 1.4rem;
+    animation: float-up linear infinite;
+    will-change: transform;
+  }
+
+  @keyframes float-up {
+    0%   { transform: translateY(110vh) rotate(0deg); opacity: 0; }
+    10%  { opacity: 1; }
+    90%  { opacity: 1; }
+    100% { transform: translateY(-10vh) rotate(360deg); opacity: 0; }
+  }
+
+  /* ───── grain ───── */
+  body::before {
+    content: '';
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 1;
+    pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+    opacity: 0.5;
+  }
+
+  /* ═════════════════════════════════════
+     SCREEN SYSTEM
+     ═════════════════════════════════════ */
+  .screen {
+    position: relative;
+    z-index: 2;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    transition: opacity 0.5s, transform 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+  }
+
+  .hidden {
+    display: none !important;
+  }
+
+  .screen.fade-out {
+    opacity: 0;
+    transform: scale(0.96);
+    pointer-events: none;
+  }
+
+  .screen.fade-in-active {
+    animation: screen-in 0.6s cubic-bezier(0.23, 1, 0.32, 1) forwards;
+  }
+
+  @keyframes screen-in {
+    from { opacity: 0; transform: scale(0.96) translateY(20px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+  }
+
+  /* ═════════════════════════════════════
+     SCREEN 1: WELCOME
+     ═════════════════════════════════════ */
+  #welcome { text-align: center; padding: 2rem; }
+
+  .welcome-logo {
+    width: 90px;
+    height: 90px;
+    border-radius: 24px;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 2.2rem;
+    font-weight: 700;
+    color: #fff;
+    cursor: pointer;
+    box-shadow: 0 0 50px var(--accent-glow), 0 0 100px rgba(108, 138, 255, 0.15);
+    animation: pulse-glow 4s ease-in-out infinite;
+    transition: transform 0.4s cubic-bezier(0.23, 1, 0.32, 1), box-shadow 0.4s;
+    user-select: none;
+  }
+
+  .welcome-logo:hover {
+    transform: scale(1.08);
+    box-shadow: 0 0 70px var(--accent-glow), 0 0 140px rgba(108, 138, 255, 0.25);
+  }
+
+  .welcome-logo:active {
+    transform: scale(0.97);
+  }
+
+  @keyframes pulse-glow {
+    0%, 100% { box-shadow: 0 0 50px var(--accent-glow), 0 0 100px rgba(108, 138, 255, 0.15); }
+    50%      { box-shadow: 0 0 70px var(--accent-glow), 0 0 140px rgba(108, 138, 255, 0.25); }
+  }
+
+  .welcome-title {
+    margin-top: 2rem;
+    font-size: 2.8rem;
+    font-weight: 700;
+    letter-spacing: -0.03em;
+    background: linear-gradient(135deg, #fff 0%, var(--accent) 50%, var(--accent2) 100%);
+    background-size: 200% 200%;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    animation: gradient-shift 6s ease-in-out infinite;
+  }
+
+  @keyframes gradient-shift {
+    0%, 100% { background-position: 0% 50%; }
+    50%      { background-position: 100% 50%; }
+  }
+
+  .welcome-sub {
+    margin-top: 0.6rem;
+    color: var(--text-dim);
+    font-size: 1.05rem;
+    font-weight: 300;
+  }
+
+  .welcome-hint {
+    margin-top: 2.5rem;
+    color: var(--text-dim);
+    font-size: 0.78rem;
+    font-family: 'JetBrains Mono', monospace;
+    opacity: 0;
+    animation: hint-appear 1s 1.5s forwards;
+  }
+
+  @keyframes hint-appear {
+    to { opacity: 0.5; }
+  }
+
+  /* entrance stagger */
+  .w-stagger { opacity: 0; transform: translateY(30px); animation: el-in 1s cubic-bezier(0.23,1,0.32,1) forwards; }
+  .w-stagger:nth-child(1) { animation-delay: 0s; }
+  .w-stagger:nth-child(2) { animation-delay: 0.12s; }
+  .w-stagger:nth-child(3) { animation-delay: 0.22s; }
+  .w-stagger:nth-child(4) { animation-delay: 0.32s; }
+
+  @keyframes el-in {
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  /* ═════════════════════════════════════
+     SCREEN 2: CATEGORY PICKER
+     ═════════════════════════════════════ */
+  #categories { text-align: center; padding: 2rem; }
+
+  .cat-heading {
+    font-size: 1.6rem;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.4rem;
+  }
+
+  .cat-sub {
+    color: var(--text-dim);
+    font-size: 0.95rem;
+    font-weight: 300;
+    margin-bottom: 3rem;
+  }
+
+  .cat-grid {
+    display: flex;
+    gap: 1.5rem;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+
+  .cat-card {
+    width: 200px;
+    padding: 2.5rem 1.5rem 2rem;
+    border-radius: 20px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    cursor: pointer;
+    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+    text-align: center;
+    user-select: none;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .cat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: radial-gradient(
+      300px circle at var(--mx, 50%) var(--my, 50%),
+      var(--card-glow, rgba(108, 138, 255, 0.06)),
+      transparent 40%
+    );
+    opacity: 0;
+    transition: opacity 0.4s;
+    pointer-events: none;
+  }
+
+  .cat-card:hover::before { opacity: 1; }
+
+  .cat-card:hover {
+    background: var(--bg-card-hover);
+    border-color: var(--border-hover);
+    transform: translateY(-6px);
+    box-shadow: 0 25px 60px rgba(0,0,0,0.3), 0 0 50px var(--card-shadow, rgba(108,138,255,0.08));
+  }
+
+  .cat-card:active { transform: translateY(-2px) scale(0.98); }
+
+  .cat-icon {
+    width: 64px;
+    height: 64px;
+    border-radius: 18px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.8rem;
+    margin-bottom: 1rem;
+    transition: transform 0.4s cubic-bezier(0.23,1,0.32,1), box-shadow 0.4s;
+  }
+
+  .cat-card:hover .cat-icon {
+    transform: scale(1.1) rotate(-5deg);
+  }
+
+  .cat-icon.math {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    box-shadow: 0 0 30px var(--accent-glow);
+  }
+
+  .cat-icon.physics {
+    background: linear-gradient(135deg, var(--physics), var(--physics2));
+    box-shadow: 0 0 30px var(--physics-glow);
+  }
+
+  .cat-card:hover .cat-icon.math { box-shadow: 0 0 45px var(--accent-glow); }
+  .cat-card:hover .cat-icon.physics { box-shadow: 0 0 45px var(--physics-glow); }
+
+  .cat-card[data-cat="physics"] {
+    --card-glow: rgba(244, 114, 182, 0.06);
+    --card-shadow: rgba(244, 114, 182, 0.08);
+    --border-hover: rgba(244, 114, 182, 0.3);
+  }
+
+  .cat-label {
+    font-size: 1.05rem;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  /* stagger */
+  .c-stagger { opacity: 0; transform: translateY(24px); }
+  .c-stagger.animate { animation: el-in 0.7s cubic-bezier(0.23,1,0.32,1) forwards; }
+  .c-stagger:nth-child(1) { animation-delay: 0s; }
+  .c-stagger:nth-child(2) { animation-delay: 0.08s; }
+  .c-stagger:nth-child(3) { animation-delay: 0.16s; }
+  .c-stagger:nth-child(4) { animation-delay: 0.24s; }
+
+  /* ═════════════════════════════════════
+     SCREEN 3: PROJECT VIEW
+     ═════════════════════════════════════ */
+  #projects {
+    padding: 2rem;
+    width: 100%;
+    max-width: 960px;
+    margin: 0 auto;
+    justify-content: flex-start;
+    padding-top: 4rem;
+  }
+
+  /* back button */
+  .back-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: none;
+    border: 1px solid var(--border);
+    color: var(--text-dim);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.78rem;
+    padding: 0.5rem 1rem;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin-bottom: 2.5rem;
+  }
+
+  .back-btn:hover {
+    color: var(--text);
+    border-color: var(--border-hover);
+    background: var(--bg-card);
+  }
+
+  .back-btn svg {
+    width: 14px; height: 14px;
+    stroke: currentColor;
+    stroke-width: 2;
+    fill: none;
+  }
+
+  /* section header */
+  .section-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .section-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 14px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.4rem;
+    flex-shrink: 0;
+  }
+
+  .section-icon.math {
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    box-shadow: 0 0 30px var(--accent-glow);
+  }
+
+  .section-icon.physics {
+    background: linear-gradient(135deg, var(--physics), var(--physics2));
+    box-shadow: 0 0 30px var(--physics-glow);
+  }
+
+  .section-title {
+    font-size: 1.8rem;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+  }
+
+  .section-title.math-title {
+    background: linear-gradient(135deg, #fff, var(--accent));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  .section-title.physics-title {
+    background: linear-gradient(135deg, #fff, var(--physics));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  /* project grid */
+  .project-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.25rem;
+  }
+
+  .project-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    text-decoration: none;
+    color: inherit;
+    border-radius: 16px;
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+    overflow: hidden;
+    cursor: pointer;
+  }
+
+  .project-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: radial-gradient(
+      600px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+      rgba(108, 138, 255, 0.06),
+      transparent 40%
+    );
+    opacity: 0;
+    transition: opacity 0.4s;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  .project-card:hover::before { opacity: 1; }
+
+  .project-card:hover {
+    background: var(--bg-card-hover);
+    border-color: var(--border-hover);
+    transform: translateY(-4px);
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3), 0 0 40px rgba(108,138,255,0.08);
+  }
+
+  .card-thumb {
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .card-thumb img {
+    width: 100%; height: 100%;
+    object-fit: cover;
+    transition: transform 0.6s cubic-bezier(0.23,1,0.32,1), filter 0.4s;
+    filter: brightness(0.7) saturate(0.9);
+  }
+
+  .project-card:hover .card-thumb img {
+    transform: scale(1.05);
+    filter: brightness(0.85) saturate(1);
+  }
+
+  .card-thumb-placeholder {
+    width: 100%; height: 100%;
+    background: linear-gradient(135deg, rgba(108,138,255,0.1) 0%, rgba(167,139,250,0.08) 50%, rgba(103,232,249,0.06) 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 2.2rem;
+    transition: background 0.4s;
+  }
+
+  .project-card:hover .card-thumb-placeholder {
+    background: linear-gradient(135deg, rgba(108,138,255,0.16) 0%, rgba(167,139,250,0.12) 50%, rgba(103,232,249,0.1) 100%);
+  }
+
+  .card-body {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1.1rem 1.35rem;
+    position: relative;
+    z-index: 2;
+  }
+
+  .card-title {
+    font-size: 1rem;
+    font-weight: 600;
+    transition: color 0.3s;
+    letter-spacing: -0.01em;
+  }
+
+  .project-card:hover .card-title { color: var(--accent); }
+
+  .card-arrow {
+    width: 24px; height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transform: translateX(-6px);
+    transition: all 0.4s cubic-bezier(0.23,1,0.32,1);
+    flex-shrink: 0;
+  }
+
+  .project-card:hover .card-arrow {
+    opacity: 1;
+    transform: translateX(0);
+  }
+
+  .card-arrow svg {
+    width: 16px; height: 16px;
+    stroke: var(--accent);
+    stroke-width: 2;
+    fill: none;
+  }
+
+  /* ───── empty state ───── */
+  .empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: var(--text-dim);
+  }
+
+  .empty-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+    opacity: 0.3;
+  }
+
+  .empty-title {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: var(--text);
+    opacity: 0.5;
+    margin-bottom: 0.4rem;
+  }
+
+  .empty-sub {
+    font-size: 0.88rem;
+    opacity: 0.4;
+  }
+
+  /* ───── project entrance stagger ───── */
+  .p-stagger { opacity: 0; transform: translateY(20px); }
+  .p-stagger.animate { animation: el-in 0.6s cubic-bezier(0.23,1,0.32,1) forwards; }
+  .p-stagger:nth-child(1) { animation-delay: 0s; }
+  .p-stagger:nth-child(2) { animation-delay: 0.08s; }
+  .p-stagger:nth-child(3) { animation-delay: 0.12s; }
+  .p-stagger:nth-child(4) { animation-delay: 0.18s; }
+
+  /* ───── responsive ───── */
+  @media (max-width: 600px) {
+    .welcome-title { font-size: 2rem; }
+    .cat-grid { flex-direction: column; align-items: center; }
+    .cat-card { width: 100%; max-width: 260px; }
+    .project-grid { grid-template-columns: 1fr; }
+    .section-title { font-size: 1.4rem; }
+  }
+</style>
 </head>
 <body>
-  <h1>Math Visualizations</h1>
-  <ul>
-    <li><a href="complex-curve-3d/">Complex Curve 3D</a></li>
-  </ul>
+
+<canvas id="bg-canvas"></canvas>
+<div class="bg-symbols" id="bg-symbols"></div>
+
+<!-- ═══════════ SCREEN 1: WELCOME ═══════════ -->
+<div class="screen" id="welcome">
+  <div class="welcome-logo w-stagger" id="enter-btn">∞</div>
+  <h1 class="welcome-title w-stagger">Visualizations</h1>
+  <p class="welcome-sub w-stagger">Interactive explorations of math & physics</p>
+  <p class="welcome-hint w-stagger">click to enter</p>
+</div>
+
+<!-- ═══════════ SCREEN 2: CATEGORIES ═══════════ -->
+<div class="screen hidden" id="categories">
+  <h2 class="cat-heading c-stagger">Choose a domain</h2>
+  <p class="cat-sub c-stagger">What would you like to explore?</p>
+  <div class="cat-grid">
+    <div class="cat-card c-stagger" data-cat="math">
+      <div class="cat-icon math">∑</div>
+      <div class="cat-label">Mathematics</div>
+    </div>
+    <div class="cat-card c-stagger" data-cat="physics">
+      <div class="cat-icon physics">⚛</div>
+      <div class="cat-label">Physics</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════ SCREEN 3: PROJECTS ═══════════ -->
+<div class="screen hidden" id="projects">
+  <button class="back-btn" id="back-btn">
+    <svg viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>
+    Back
+  </button>
+
+  <!-- ── MATH SECTION ── -->
+  <div id="math-section" class="hidden">
+    <div class="section-header p-stagger">
+      <div class="section-icon math">∑</div>
+      <h2 class="section-title math-title">Mathematics</h2>
+    </div>
+
+    <div class="project-grid">
+      <!--
+        ┌────────────────────────────────────────────────────┐
+        │  HOW TO ADD A MATH PROJECT CARD                    │
+        │                                                    │
+        │  1. Copy an <a> block below                        │
+        │  2. Change href to your project folder             │
+        │  3. Change the card-title text                     │
+        │                                                    │
+        │  TO ADD A THUMBNAIL IMAGE:                         │
+        │  Replace the <div class="card-thumb-placeholder">  │
+        │  block with:                                       │
+        │    <img src="assets/your-image.png" alt="">        │
+        └────────────────────────────────────────────────────┘
+      -->
+
+      <a href="assets/complex-curve-3d/" class="project-card p-stagger">
+        <div class="card-thumb">
+          <div class="card-thumb-placeholder">🌀</div>
+        </div>
+        <div class="card-body">
+          <span class="card-title">Complex Curve 3D</span>
+          <div class="card-arrow">
+            <svg viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
+          </div>
+        </div>
+      </a>
+    </div>
+
+    <div class="empty-state">
+      <div class="empty-icon">∑</div>
+      <div class="empty-title">Nothing here yet</div>
+      <div class="empty-sub">Math visualizations coming soon</div>
+    </div>
+  </div>
+
+  <!-- ── PHYSICS SECTION ── -->
+  <div id="physics-section" class="hidden">
+    <div class="section-header p-stagger">
+      <div class="section-icon physics">⚛</div>
+      <h2 class="section-title physics-title">Physics</h2>
+    </div>
+
+    <div class="project-grid">
+      <!--
+        ┌────────────────────────────────────────────────────┐
+        │  HOW TO ADD A PHYSICS PROJECT CARD                 │
+        │  Same pattern as math — copy an <a> block,         │
+        │  change href and title.                            │
+        └────────────────────────────────────────────────────┘
+      -->
+    </div>
+
+    <div class="empty-state">
+      <div class="empty-icon">⚛</div>
+      <div class="empty-title">Nothing here yet</div>
+      <div class="empty-sub">Physics visualizations coming soon</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ═══════════ SCREEN TRANSITIONS ═══════════
+const screens = {
+  welcome:    document.getElementById('welcome'),
+  categories: document.getElementById('categories'),
+  projects:   document.getElementById('projects'),
+};
+
+const mathSection    = document.getElementById('math-section');
+const physicsSection = document.getElementById('physics-section');
+
+// Auto-hide empty states in any section that has project cards
+function updateEmptyStates() {
+  [mathSection, physicsSection].forEach(section => {
+    const emptyEl = section.querySelector('.empty-state');
+    if (!emptyEl) return;
+    const hasCards = section.querySelectorAll('.project-card').length > 0;
+    emptyEl.style.display = hasCards ? 'none' : '';
+  });
+}
+updateEmptyStates();
+
+function transition(from, to, setup) {
+  from.classList.add('fade-out');
+  setTimeout(() => {
+    from.classList.add('hidden');
+    from.classList.remove('fade-out');
+    if (setup) setup();
+    to.classList.remove('hidden');
+    to.classList.add('fade-in-active');
+    // reset then re-trigger stagger animations on visible elements
+    to.querySelectorAll('.c-stagger, .p-stagger').forEach(el => {
+      if (el.closest('.hidden')) return;
+      el.classList.remove('animate');
+      void el.offsetWidth; // force reflow so animation replays
+      el.classList.add('animate');
+    });
+    setTimeout(() => to.classList.remove('fade-in-active'), 700);
+  }, 400);
+}
+
+// Welcome → Categories
+document.getElementById('enter-btn').addEventListener('click', () => {
+  transition(screens.welcome, screens.categories);
+});
+
+// Category cards → Projects
+document.querySelectorAll('.cat-card').forEach(card => {
+  card.addEventListener('click', () => {
+    const cat = card.dataset.cat;
+    transition(screens.categories, screens.projects, () => {
+      // show only the chosen section
+      mathSection.classList.toggle('hidden', cat !== 'math');
+      physicsSection.classList.toggle('hidden', cat !== 'physics');
+
+      // reset stagger on the visible section so animations replay
+      const activeSection = cat === 'math' ? mathSection : physicsSection;
+      activeSection.querySelectorAll('.p-stagger').forEach(el => {
+        el.classList.remove('animate');
+        void el.offsetWidth;
+      });
+    });
+  });
+
+  // spotlight follow
+  card.addEventListener('mousemove', e => {
+    const r = card.getBoundingClientRect();
+    card.style.setProperty('--mx', (e.clientX - r.left) + 'px');
+    card.style.setProperty('--my', (e.clientY - r.top) + 'px');
+  });
+});
+
+// Back → Categories
+document.getElementById('back-btn').addEventListener('click', () => {
+  transition(screens.projects, screens.categories);
+});
+
+// ═══════════ CARD SPOTLIGHT ═══════════
+function initCardSpotlights() {
+  document.querySelectorAll('.project-card').forEach(card => {
+    card.addEventListener('mousemove', e => {
+      const r = card.getBoundingClientRect();
+      card.style.setProperty('--mouse-x', (e.clientX - r.left) + 'px');
+      card.style.setProperty('--mouse-y', (e.clientY - r.top) + 'px');
+    });
+  });
+}
+initCardSpotlights();
+
+// ═══════════ PARTICLE NETWORK ═══════════
+(function() {
+  const canvas = document.getElementById('bg-canvas');
+  const ctx = canvas.getContext('2d');
+  let w, h, particles = [], mouse = { x: null, y: null };
+
+  function resize() { w = canvas.width = innerWidth; h = canvas.height = innerHeight; }
+  resize();
+  addEventListener('resize', resize);
+  document.addEventListener('mousemove', e => { mouse.x = e.clientX; mouse.y = e.clientY; });
+
+  class P {
+    constructor() { this.reset(); }
+    reset() {
+      this.x = Math.random() * w; this.y = Math.random() * h;
+      this.vx = (Math.random() - 0.5) * 0.3; this.vy = (Math.random() - 0.5) * 0.3;
+      this.r = Math.random() * 1.5 + 0.5; this.a = Math.random() * 0.3 + 0.05;
+    }
+    update() {
+      this.x += this.vx; this.y += this.vy;
+      if (this.x < 0 || this.x > w) this.vx *= -1;
+      if (this.y < 0 || this.y > h) this.vy *= -1;
+      if (mouse.x !== null) {
+        const dx = mouse.x - this.x, dy = mouse.y - this.y;
+        const d = Math.sqrt(dx*dx + dy*dy);
+        if (d < 200) { this.vx += dx * 0.00003; this.vy += dy * 0.00003; }
+      }
+      this.vx *= 0.999; this.vy *= 0.999;
+    }
+    draw() {
+      ctx.beginPath(); ctx.arc(this.x, this.y, this.r, 0, Math.PI*2);
+      ctx.fillStyle = `rgba(108,138,255,${this.a})`; ctx.fill();
+    }
+  }
+
+  const n = Math.min(80, Math.floor((w*h)/15000));
+  for (let i = 0; i < n; i++) particles.push(new P());
+
+  function frame() {
+    ctx.clearRect(0, 0, w, h);
+    particles.forEach(p => { p.update(); p.draw(); });
+    for (let i = 0; i < particles.length; i++)
+      for (let j = i+1; j < particles.length; j++) {
+        const dx = particles[i].x - particles[j].x, dy = particles[i].y - particles[j].y;
+        const d = Math.sqrt(dx*dx + dy*dy);
+        if (d < 150) {
+          ctx.beginPath();
+          ctx.moveTo(particles[i].x, particles[i].y);
+          ctx.lineTo(particles[j].x, particles[j].y);
+          ctx.strokeStyle = `rgba(108,138,255,${(1 - d/150)*0.08})`;
+          ctx.lineWidth = 0.5; ctx.stroke();
+        }
+      }
+    requestAnimationFrame(frame);
+  }
+  frame();
+})();
+
+// ═══════════ FLOATING SYMBOLS ═══════════
+(function() {
+  const c = document.getElementById('bg-symbols');
+  const syms = ['∫','Σ','∂','π','∞','√','Δ','θ','λ','φ','ω','∇','ε','ζ','⚛','ℝ','ℂ','ℤ','∏','⊕'];
+
+  function spawn() {
+    const el = document.createElement('span');
+    el.className = 'bg-sym';
+    el.textContent = syms[Math.floor(Math.random() * syms.length)];
+    el.style.left = Math.random()*100 + '%';
+    el.style.fontSize = (Math.random()*1.2 + 0.8) + 'rem';
+    const dur = Math.random()*20 + 15;
+    el.style.animationDuration = dur + 's';
+    el.style.animationDelay = '0s';
+    c.appendChild(el);
+    setTimeout(() => el.remove(), dur*1000);
+  }
+
+  for (let i = 0; i < 15; i++) setTimeout(spawn, Math.random()*5000);
+  setInterval(spawn, 2000);
+})();
+</script>
 </body>
 </html>
