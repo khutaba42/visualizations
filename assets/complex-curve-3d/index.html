@@ -143,6 +143,42 @@
     margin-top: 8px;
   }
 </style>
+<script>
+const i18n = {
+  en: {
+    subtitle: "Complex-valued function of a real variable",
+    curveLabel: "Curve γ(t)",
+    legend3d: "3D curve (t, Re, Im)",
+    legendShadowC: "Shadow on ℂ-plane (Re, Im)",
+    legendShadowRe: "Shadow on (t, Re)",
+    legendShadowIm: "Shadow on (t, Im)",
+    infoLine1: "Drag to rotate · Scroll to zoom",
+    infoLine2: 'The <em>t</em>-axis goes "into" the screen; Re and Im form the other two axes.'
+  },
+  he: {
+    subtitle: "פונקציה מרוכבת של משתנה ממשי",
+    curveLabel: "עקומה γ(t)",
+    legend3d: "עקומה תלת-ממדית (t, Re, Im)",
+    legendShadowC: "הטלה על מישור ℂ (Re, Im)",
+    legendShadowRe: "הטלה על (t, Re)",
+    legendShadowIm: "הטלה על (t, Im)",
+    infoLine1: "גרור לסיבוב · גלול לזום",
+    infoLine2: 'ציר <em>t</em> נכנס "לתוך" המסך; Re ו-Im יוצרים את שני הצירים האחרים.'
+  },
+  ar: {
+    subtitle: "دالة مركّبة لمتغير حقيقي",
+    curveLabel: "المنحنى γ(t)",
+    legend3d: "منحنى ثلاثي الأبعاد (t, Re, Im)",
+    legendShadowC: "ظل على مستوى ℂ (Re, Im)",
+    legendShadowRe: "ظل على (t, Re)",
+    legendShadowIm: "ظل على (t, Im)",
+    infoLine1: "اسحب للتدوير · مرر للتكبير",
+    infoLine2: 'محور <em>t</em> يدخل "في" الشاشة؛ Re وIm يشكلان المحورين الآخرين.'
+  }
+};
+let currentLang = 'en';
+function t(key) { return i18n[currentLang][key]; }
+</script>
 </head>
 <body>
 
@@ -150,10 +186,10 @@
 
 <div class="controls">
   <h1>γ : [a, b] → ℂ</h1>
-  <div class="subtitle">Complex-valued function of a real variable</div>
+  <div class="subtitle" id="i18n-subtitle">Complex-valued function of a real variable</div>
 
   <div class="field">
-    <label>Curve γ(t)</label>
+    <label id="i18n-curve-label">Curve γ(t)</label>
     <select id="curve-select">
       <option value="helix">e^(it) — unit circle</option>
       <option value="spiral">e^(−t/4) · e^(3it) — decaying spiral</option>
@@ -185,13 +221,13 @@
 </div>
 
 <div class="legend">
-  <div class="legend-item"><div class="legend-dot" style="background:#ff6b8a;"></div><span>3D curve (t, Re, Im)</span></div>
-  <div class="legend-item"><div class="legend-dot" style="background:rgba(100,140,255,0.5);"></div><span>Shadow on ℂ-plane (Re, Im)</span></div>
-  <div class="legend-item"><div class="legend-dot" style="background:rgba(255,180,100,0.4);"></div><span>Shadow on (t, Re)</span></div>
-  <div class="legend-item"><div class="legend-dot" style="background:rgba(100,255,160,0.4);"></div><span>Shadow on (t, Im)</span></div>
+  <div class="legend-item"><div class="legend-dot" style="background:#ff6b8a;"></div><span id="i18n-legend-3d">3D curve (t, Re, Im)</span></div>
+  <div class="legend-item"><div class="legend-dot" style="background:rgba(100,140,255,0.5);"></div><span id="i18n-legend-c">Shadow on ℂ-plane (Re, Im)</span></div>
+  <div class="legend-item"><div class="legend-dot" style="background:rgba(255,180,100,0.4);"></div><span id="i18n-legend-re">Shadow on (t, Re)</span></div>
+  <div class="legend-item"><div class="legend-dot" style="background:rgba(100,255,160,0.4);"></div><span id="i18n-legend-im">Shadow on (t, Im)</span></div>
 </div>
 
-<div class="info">
+<div class="info" id="i18n-info">
   Drag to rotate · Scroll to zoom<br>
   The <em>t</em>-axis goes "into" the screen; Re and Im form the other two axes.
 </div>
@@ -448,6 +484,68 @@ window.addEventListener('resize', () => {
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
 });
+
+// Settings gear with language dropdown
+(function() {
+    const style = document.createElement('style');
+    style.textContent = `
+      .lang-settings-btn { position:fixed; top:12px; right:12px; z-index:9999; width:36px; height:36px; border-radius:50%; background:rgba(10,10,18,0.88); border:1px solid rgba(255,255,255,0.1); cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,0.3); backdrop-filter:blur(12px); transition:background 0.2s, transform 0.2s; }
+      .lang-settings-btn:hover { background:rgba(20,20,30,0.95); transform:scale(1.08); }
+      .lang-settings-btn svg { width:18px; height:18px; fill:#999; }
+      .lang-dropdown { position:fixed; top:54px; right:12px; z-index:9999; background:rgba(10,10,18,0.92); border:1px solid rgba(255,255,255,0.08); border-radius:10px; backdrop-filter:blur(12px); box-shadow:0 4px 16px rgba(0,0,0,0.4); padding:6px 0; min-width:160px; opacity:0; transform:translateY(-8px); pointer-events:none; transition:opacity 0.2s, transform 0.2s; }
+      .lang-dropdown.open { opacity:1; transform:translateY(0); pointer-events:auto; }
+      .lang-dropdown-header { padding:6px 14px; font-size:10px; font-weight:600; text-transform:uppercase; letter-spacing:1px; color:#666; font-family:'JetBrains Mono',monospace; }
+      .lang-option { display:flex; align-items:center; gap:8px; padding:8px 14px; cursor:pointer; font-size:13px; font-weight:400; color:#ccc; transition:background 0.15s; border:none; background:none; width:100%; text-align:left; font-family:'JetBrains Mono',monospace; }
+      .lang-option:hover { background:rgba(255,255,255,0.06); }
+      .lang-option.active { color:#7c9aff; font-weight:500; }
+      .lang-option .check { width:16px; font-size:14px; }
+    `;
+    document.head.appendChild(style);
+
+    const gearBtn = document.createElement('button');
+    gearBtn.className = 'lang-settings-btn';
+    gearBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.49.49 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 00-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 00-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6A3.6 3.6 0 1115.6 12 3.61 3.61 0 0112 15.6z"/></svg>';
+    document.body.appendChild(gearBtn);
+
+    const dropdown = document.createElement('div');
+    dropdown.className = 'lang-dropdown';
+    dropdown.innerHTML = `
+      <div class="lang-dropdown-header">Language</div>
+      <button class="lang-option active" data-lang="en"><span class="check">✓</span> English</button>
+      <button class="lang-option" data-lang="he"><span class="check"></span> עברית</button>
+      <button class="lang-option" data-lang="ar"><span class="check"></span> العربية</button>
+    `;
+    document.body.appendChild(dropdown);
+
+    gearBtn.addEventListener('click', (e) => { e.stopPropagation(); dropdown.classList.toggle('open'); });
+    document.addEventListener('click', () => dropdown.classList.remove('open'));
+    dropdown.addEventListener('click', (e) => e.stopPropagation());
+
+    dropdown.querySelectorAll('.lang-option').forEach(opt => {
+        opt.addEventListener('click', () => {
+            const lang = opt.dataset.lang;
+            currentLang = lang;
+            const isRTL = (lang === 'he' || lang === 'ar');
+            document.documentElement.dir = isRTL ? 'rtl' : 'ltr';
+            gearBtn.style.right = isRTL ? '' : '12px';
+            gearBtn.style.left = isRTL ? '12px' : '';
+            dropdown.style.right = isRTL ? '' : '12px';
+            dropdown.style.left = isRTL ? '12px' : '';
+            dropdown.querySelectorAll('.lang-option').forEach(o => { o.classList.remove('active'); o.querySelector('.check').textContent = ''; });
+            opt.classList.add('active');
+            opt.querySelector('.check').textContent = '✓';
+            // Update UI text
+            document.getElementById('i18n-subtitle').textContent = t('subtitle');
+            document.getElementById('i18n-curve-label').textContent = t('curveLabel');
+            document.getElementById('i18n-legend-3d').textContent = t('legend3d');
+            document.getElementById('i18n-legend-c').textContent = t('legendShadowC');
+            document.getElementById('i18n-legend-re').textContent = t('legendShadowRe');
+            document.getElementById('i18n-legend-im').textContent = t('legendShadowIm');
+            document.getElementById('i18n-info').innerHTML = t('infoLine1') + '<br>' + t('infoLine2');
+            dropdown.classList.remove('open');
+        });
+    });
+})();
 </script>
 </body>
 </html>

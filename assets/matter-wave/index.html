@@ -2956,6 +2956,105 @@ const { state, ui } = WH.createApp({
     }
 });
 
+// --- i18n ---
+const i18n = {
+  en: {
+    title: "Matter Wave Packet",
+    dkLabel: "Δk (Spectral Width)",
+    hudSpectralWidth: "Spectral Width (Δk)",
+    hudLocalization: "Packet Localization (1/Δk)",
+    hudComponents: "Components (M)",
+    chartWavePacket: "Wave Packet (Sum)",
+    chartProbDensity: "Probability Density (|Sum|²)",
+    chartComponents: "Individual Components",
+    xAxisLabel: "Position (x)"
+  },
+  he: {
+    title: "חבילת גלי חומר",
+    dkLabel: "Δk (רוחב ספקטרלי)",
+    hudSpectralWidth: "רוחב ספקטרלי (Δk)",
+    hudLocalization: "לוקליזציה מרחבית (1/Δk)",
+    hudComponents: "רכיבים (M)",
+    chartWavePacket: "חבילת גלים (סכום)",
+    chartProbDensity: "צפיפות הסתברות (|סכום|²)",
+    chartComponents: "רכיבים בודדים",
+    xAxisLabel: "מיקום (x)"
+  },
+  ar: {
+    title: "حزمة موجة المادة",
+    dkLabel: "Δk (العرض الطيفي)",
+    hudSpectralWidth: "العرض الطيفي (Δk)",
+    hudLocalization: "توضع الحزمة (1/Δk)",
+    hudComponents: "المركبات (M)",
+    chartWavePacket: "حزمة الموجة (المجموع)",
+    chartProbDensity: "كثافة الاحتمال (|المجموع|²)",
+    chartComponents: "المركبات الفردية",
+    xAxisLabel: "الموقع (x)"
+  }
+};
+let currentLang = 'en';
+function t(key) { return i18n[currentLang][key]; }
+
+// Settings gear with language dropdown — fixed position, always visible
+{
+    const style = document.createElement('style');
+    style.textContent = `
+      .lang-settings-btn { position:fixed; top:12px; right:12px; z-index:9999; width:36px; height:36px; border-radius:50%; background:var(--surface-container-high, #E9EBF0); border:1px solid var(--stroke-default, #DCDFE5); cursor:pointer; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,0.15); transition:background 0.2s, transform 0.2s; }
+      .lang-settings-btn:hover { background:var(--surface-container-highest, #dee1e3); transform:scale(1.08); }
+      .lang-settings-btn svg { width:18px; height:18px; fill:var(--on-surface-default, #1B1C1D); }
+      .lang-dropdown { position:fixed; top:54px; right:12px; z-index:9999; background:var(--surface-container-high, #E9EBF0); border:1px solid var(--stroke-default, #DCDFE5); border-radius:10px; box-shadow:0 4px 16px rgba(0,0,0,0.18); padding:6px 0; min-width:160px; opacity:0; transform:translateY(-8px); pointer-events:none; transition:opacity 0.2s, transform 0.2s; }
+      .lang-dropdown.open { opacity:1; transform:translateY(0); pointer-events:auto; }
+      .lang-dropdown-header { padding:6px 14px; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:0.5px; color:var(--on-surface-de-emphasis, #444746); }
+      .lang-option { display:flex; align-items:center; gap:8px; padding:8px 14px; cursor:pointer; font-size:13px; font-weight:500; color:var(--on-surface-default, #1B1C1D); transition:background 0.15s; border:none; background:none; width:100%; text-align:left; }
+      .lang-option:hover { background:var(--surface-container-highest, #dee1e3); }
+      .lang-option.active { color:var(--primary, #0B57D0); font-weight:600; }
+      .lang-option .check { width:16px; font-size:14px; }
+    `;
+    document.head.appendChild(style);
+
+    const gearBtn = document.createElement('button');
+    gearBtn.className = 'lang-settings-btn';
+    gearBtn.innerHTML = '<svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58a.49.49 0 00.12-.61l-1.92-3.32a.49.49 0 00-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54a.484.484 0 00-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96a.49.49 0 00-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.07.62-.07.94s.02.64.07.94l-2.03 1.58a.49.49 0 00-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6A3.6 3.6 0 1115.6 12 3.61 3.61 0 0112 15.6z"/></svg>';
+    document.body.appendChild(gearBtn);
+
+    const dropdown = document.createElement('div');
+    dropdown.className = 'lang-dropdown';
+    dropdown.innerHTML = `
+      <div class="lang-dropdown-header">Language</div>
+      <button class="lang-option active" data-lang="en"><span class="check">✓</span> English</button>
+      <button class="lang-option" data-lang="he"><span class="check"></span> עברית</button>
+      <button class="lang-option" data-lang="ar"><span class="check"></span> العربية</button>
+    `;
+    document.body.appendChild(dropdown);
+
+    gearBtn.addEventListener('click', (e) => { e.stopPropagation(); dropdown.classList.toggle('open'); });
+    document.addEventListener('click', () => dropdown.classList.remove('open'));
+    dropdown.addEventListener('click', (e) => e.stopPropagation());
+
+    dropdown.querySelectorAll('.lang-option').forEach(opt => {
+        opt.addEventListener('click', () => {
+            const lang = opt.dataset.lang;
+            currentLang = lang;
+            const isRTL = (lang === 'he' || lang === 'ar');
+            document.documentElement.dir = isRTL ? 'rtl' : 'ltr';
+            gearBtn.style.right = isRTL ? '' : '12px';
+            gearBtn.style.left = isRTL ? '12px' : '';
+            dropdown.style.right = isRTL ? '' : '12px';
+            dropdown.style.left = isRTL ? '12px' : '';
+            dropdown.querySelectorAll('.lang-option').forEach(o => { o.classList.remove('active'); o.querySelector('.check').textContent = ''; });
+            opt.classList.add('active');
+            opt.querySelector('.check').textContent = '✓';
+            const titleEl = document.querySelector('.widget-title');
+            if (titleEl) titleEl.textContent = t('title');
+            const labels = document.querySelectorAll('.param-label');
+            labels.forEach(l => {
+                if (l.textContent.includes('Δk') || l.textContent.includes('ספקטרלי') || l.textContent.includes('الطيفي')) l.textContent = t('dkLabel');
+            });
+            dropdown.classList.remove('open');
+        });
+    });
+}
+
 // 2. Constants & Initial State
 const K0 = 1.0;
 const M = 25;
@@ -3001,9 +3100,9 @@ function updatePhysics() {
     // Update Cockpit HUD
     const invDk = dk === 0 ? "∞" : (1 / dk).toFixed(2);
     ui.setHUD([
-        { label: "Spectral Width (Δk)", value: dk.toFixed(1) },
-        { label: "Packet Localization (1/Δk)", value: invDk },
-        { label: "Components (M)", value: M + 1 }
+        { label: t('hudSpectralWidth'), value: dk.toFixed(1) },
+        { label: t('hudLocalization'), value: invDk },
+        { label: t('hudComponents'), value: M + 1 }
     ]);
 }
 
@@ -3034,7 +3133,7 @@ const renderPlot = WH.initPlot('viz', (w, h) => {
         ...shared,
         marks: [
             Plot.lineY(waveData, { x: "x", y: "y", stroke: c('--primary'), strokeWidth: 2 }),
-            Plot.text(["Wave Packet (Sum)"], labelStyle)
+            Plot.text([t('chartWavePacket')], labelStyle)
         ]
     });
 
@@ -3043,17 +3142,17 @@ const renderPlot = WH.initPlot('viz', (w, h) => {
         ...shared,
         marks: [
             Plot.lineY(probData, { x: "x", y: "y", stroke: c('--chart-2'), strokeWidth: 2 }),
-            Plot.text(["Probability Density (|Sum|²)"], labelStyle)
+            Plot.text([t('chartProbDensity')], labelStyle)
         ]
     });
 
     // Chart 3: Individual Components (with x-axis label)
     const chart3 = Plot.plot({
         ...shared,
-        x: { grid: true, label: "Position (x)" },
+        x: { grid: true, label: t('xAxisLabel') },
         marks: [
             Plot.lineY(compData, { x: "x", y: "y", z: "id", stroke: c('--outline'), strokeOpacity: 0.3, strokeWidth: 1 }),
-            Plot.text(["Individual Components"], labelStyle)
+            Plot.text([t('chartComponents')], labelStyle)
         ]
     });
 
