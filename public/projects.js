@@ -11,6 +11,13 @@ const PROJECTS = [
     folder: "complex-curve-3d"
   },
   {
+    id: "inversion",
+    title: "Geometric Inversion",
+    category: "math",
+    emoji: "🔄",
+    folder: "inversion"
+  },
+  {
     id: "wave-packet",
     title: "Wave Interference & Packet",
     category: "physics",

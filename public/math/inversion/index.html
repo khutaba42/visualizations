@@ -1,0 +1,1464 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Geometric Inversion</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500&family=Source+Serif+4:ital,wght@0,300;0,400;1,300&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #0a0a0f;
+    color: #c8c8d0;
+    font-family: 'JetBrains Mono', monospace;
+    overflow: hidden;
+    height: 100vh;
+    user-select: none;
+  }
+
+  canvas {
+    display: block;
+    position: absolute;
+    top: 0; left: 0;
+    width: 100vw;
+    height: 100vh;
+    cursor: crosshair;
+  }
+
+  /* ─── Control Panel ─── */
+  .panel {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    background: rgba(10, 10, 18, 0.92);
+    backdrop-filter: blur(16px);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 14px;
+    padding: 22px 26px;
+    min-width: 310px;
+    z-index: 10;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+    max-height: calc(100vh - 40px);
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255,255,255,0.1) transparent;
+  }
+
+  .panel::-webkit-scrollbar { width: 4px; }
+  .panel::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+  .panel h1 {
+    font-family: 'Source Serif 4', serif;
+    font-weight: 300;
+    font-size: 20px;
+    color: #e8e8f0;
+    margin-bottom: 2px;
+    letter-spacing: 0.5px;
+  }
+
+  .panel .subtitle {
+    font-size: 11px;
+    color: #555568;
+    margin-bottom: 18px;
+    font-weight: 300;
+  }
+
+  .section-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #555568;
+    margin: 16px 0 8px;
+  }
+
+  .section-label:first-of-type { margin-top: 0; }
+
+
+  /* ─── Toolbar ─── */
+  .toolbar {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+  }
+
+  .tool-btn {
+    padding: 7px 14px;
+    border-radius: 8px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: #999;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.25s;
+    white-space: nowrap;
+  }
+
+  .tool-btn:hover {
+    background: rgba(255,255,255,0.08);
+    color: #ccc;
+    border-color: rgba(255,255,255,0.15);
+  }
+
+  .tool-btn.active {
+    background: linear-gradient(135deg, rgba(108,138,255,0.2), rgba(167,139,250,0.15));
+    border-color: rgba(108,138,255,0.4);
+    color: #b8c8ff;
+    box-shadow: 0 0 16px rgba(108,138,255,0.15);
+  }
+
+  /* ─── Sliders ─── */
+  .slider-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin: 6px 0;
+  }
+
+  .slider-row label {
+    font-size: 11px;
+    color: #888;
+    width: 60px;
+    flex-shrink: 0;
+  }
+
+  .slider-row input[type="range"] {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 4px;
+    border-radius: 2px;
+    background: rgba(255,255,255,0.08);
+    outline: none;
+  }
+
+  .slider-row input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6c8aff, #a78bfa);
+    cursor: pointer;
+    box-shadow: 0 0 8px rgba(108,138,255,0.4);
+  }
+
+  .slider-row input[type="range"]::-moz-range-thumb {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #6c8aff, #a78bfa);
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 0 8px rgba(108,138,255,0.4);
+  }
+
+  .slider-row .val {
+    font-size: 11px;
+    color: #6c8aff;
+    width: 36px;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  /* ─── Toggles ─── */
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 6px 0;
+  }
+
+  .toggle-row span {
+    font-size: 11px;
+    color: #888;
+  }
+
+  .toggle {
+    width: 38px;
+    height: 20px;
+    border-radius: 10px;
+    background: rgba(255,255,255,0.08);
+    cursor: pointer;
+    position: relative;
+    border: none;
+    transition: background 0.3s;
+    flex-shrink: 0;
+  }
+
+  .toggle.on {
+    background: linear-gradient(135deg, #6c8aff, #a78bfa);
+  }
+
+  .toggle::after {
+    content: '';
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #fff;
+    transition: transform 0.3s;
+  }
+
+  .toggle.on::after {
+    transform: translateX(18px);
+  }
+
+  /* ─── Action buttons ─── */
+  .actions {
+    display: flex;
+    gap: 6px;
+    margin-top: 14px;
+  }
+
+  .action-btn {
+    flex: 1;
+    padding: 8px 0;
+    border-radius: 8px;
+    background: rgba(255,80,80,0.08);
+    border: 1px solid rgba(255,80,80,0.15);
+    color: #ff6b6b;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    cursor: pointer;
+    transition: all 0.25s;
+  }
+
+  .action-btn:hover {
+    background: rgba(255,80,80,0.15);
+    border-color: rgba(255,80,80,0.3);
+  }
+
+  .action-btn.preset {
+    background: rgba(108,138,255,0.08);
+    border-color: rgba(108,138,255,0.15);
+    color: #6c8aff;
+  }
+
+  .action-btn.preset:hover {
+    background: rgba(108,138,255,0.15);
+    border-color: rgba(108,138,255,0.3);
+  }
+
+  /* ─── Info tooltip ─── */
+  .info-bar {
+    position: absolute;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(10, 10, 18, 0.88);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 10px;
+    padding: 10px 20px;
+    font-size: 11px;
+    color: #777;
+    z-index: 10;
+    text-align: center;
+    pointer-events: none;
+    transition: opacity 0.3s;
+    max-width: 90vw;
+  }
+
+  .info-bar .key {
+    display: inline-block;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 4px;
+    padding: 1px 6px;
+    margin: 0 2px;
+    font-size: 10px;
+    color: #999;
+  }
+
+  /* snap indicator */
+  .snap-ring {
+    pointer-events: none;
+  }
+
+  /* ─── Top-right bar ─── */
+  .top-right {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    z-index: 10;
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+  }
+
+  .back-link {
+    padding: 8px 16px;
+    border-radius: 10px;
+    background: rgba(10,10,18,0.88);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.06);
+    color: #6c8aff;
+    text-decoration: none;
+    font-size: 12px;
+    transition: all 0.25s;
+    height: 36px;
+    display: flex;
+    align-items: center;
+  }
+
+  .back-link:hover {
+    background: rgba(108,138,255,0.1);
+    border-color: rgba(108,138,255,0.3);
+  }
+
+  /* ─── Settings gear ─── */
+  .settings-wrap {
+    position: relative;
+  }
+
+  .settings-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: rgba(10,10,18,0.88);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.06);
+    color: #888;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.25s;
+  }
+
+  .settings-btn:hover {
+    color: #ccc;
+    background: rgba(108,138,255,0.1);
+    border-color: rgba(108,138,255,0.3);
+  }
+
+  .settings-btn.open {
+    color: #6c8aff;
+    border-color: rgba(108,138,255,0.4);
+  }
+
+  .settings-btn svg {
+    width: 16px;
+    height: 16px;
+    stroke: currentColor;
+    stroke-width: 2;
+    fill: none;
+    transition: transform 0.4s cubic-bezier(0.23,1,0.32,1);
+  }
+
+  .settings-btn.open svg {
+    transform: rotate(90deg);
+  }
+
+  .settings-dropdown {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    width: 260px;
+    background: rgba(10, 10, 18, 0.94);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 14px;
+    padding: 18px 20px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.03);
+    animation: settings-in 0.25s cubic-bezier(0.23,1,0.32,1);
+    z-index: 100;
+  }
+
+  .settings-dropdown.hidden { display: none; }
+
+  @keyframes settings-in {
+    from { opacity: 0; transform: translateY(-8px) scale(0.96); }
+    to   { opacity: 1; transform: translateY(0) scale(1); }
+  }
+
+  .settings-dropdown .settings-heading {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #555568;
+    margin-bottom: 12px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+</style>
+</head>
+<body>
+
+<canvas id="canvas"></canvas>
+
+<div class="panel" id="panel">
+  <h1>Geometric Inversion</h1>
+  <div class="subtitle">OP · OP' = r² — drag the circle, add shapes, watch them transform</div>
+
+  <div class="section-label">Tool</div>
+  <div class="toolbar">
+    <button class="tool-btn active" data-tool="move">⊙ Move</button>
+    <button class="tool-btn" data-tool="point">• Point</button>
+    <button class="tool-btn" data-tool="line">/ Line</button>
+    <button class="tool-btn" data-tool="circle">○ Circle</button>
+    <button class="tool-btn" data-tool="curve">~ Curve</button>
+  </div>
+
+  <div class="section-label">Inversion Circle</div>
+  <div class="slider-row">
+    <label>Radius</label>
+    <input type="range" id="radius-slider" min="40" max="400" value="160">
+    <span class="val" id="radius-val">160</span>
+  </div>
+
+  <div class="actions">
+    <button class="action-btn preset" onclick="loadPreset()">★ Preset</button>
+    <button class="action-btn" onclick="clearAll()">✕ Clear all</button>
+  </div>
+</div>
+
+<div class="top-right">
+  <a class="back-link" href="../../../index.html">← Hub</a>
+  <div class="settings-wrap">
+    <button class="settings-btn" id="settings-btn" title="Settings">
+      <svg viewBox="0 0 24 24"><path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/><circle cx="12" cy="12" r="3"/></svg>
+    </button>
+    <div class="settings-dropdown hidden" id="settings-dropdown">
+      <div class="settings-heading">Settings</div>
+      <div class="slider-row">
+        <label>Grid α</label>
+        <input type="range" id="grid-opacity" min="0" max="100" value="60">
+        <span class="val" id="grid-opacity-val">60%</span>
+      </div>
+      <div class="slider-row">
+        <label>Inv grid α</label>
+        <input type="range" id="grid-inv-opacity" min="0" max="100" value="60">
+        <span class="val" id="grid-inv-opacity-val">60%</span>
+      </div>
+      <div class="slider-row">
+        <label>Snap dist</label>
+        <input type="range" id="snap-dist" min="0" max="40" value="18">
+        <span class="val" id="snap-dist-val">18</span>
+      </div>
+      <div class="toggle-row">
+        <span>Show grid</span>
+        <button class="toggle on" id="toggle-grid"></button>
+      </div>
+      <div class="toggle-row">
+        <span>Construction lines</span>
+        <button class="toggle on" id="toggle-construction"></button>
+      </div>
+      <div class="toggle-row">
+        <span>Animate pulse</span>
+        <button class="toggle" id="toggle-pulse"></button>
+      </div>
+      <div class="toggle-row">
+        <span>Point snapping</span>
+        <button class="toggle on" id="toggle-snap"></button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="info-bar">
+  Click to place · Drag endpoints to reshape · Objects snap to existing points · Scroll to resize circle · <span class="key">Del</span> remove hovered
+</div>
+
+<script>
+// ═══════════════════════════════════════════════
+//  GEOMETRIC INVERSION — Interactive Visualization
+// ═══════════════════════════════════════════════
+
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+let W, H;
+
+function resize() {
+  W = canvas.width = window.innerWidth;
+  H = canvas.height = window.innerHeight;
+}
+resize();
+window.addEventListener('resize', resize);
+
+// ─── State ───
+let inversionCenter = { x: 0, y: 0 };
+let inversionRadius = 160;
+let effectiveRadius = 160; // radius used for math (includes pulse)
+let tool = 'move';
+let showGrid = true;
+let showConstruction = true;
+let animatePulse = false;
+let enableSnap = true;
+let snapDist = 18;
+let gridOpacity = 0.6; // 0..1
+let gridInvOpacity = 0.6; // 0..1 — inverted grid
+let pulsePhase = 0;
+
+// Objects
+const objects = {
+  points: [],    // { x, y, id }
+  lines: [],     // { p1: id|{x,y}, p2: id|{x,y} } — endpoints reference point IDs or inline coords
+  circles: [],   // { center: id|{x,y}, edge: {x,y} } — center can ref a point, edge defines radius
+  curves: []     // [ {x, y}, ... ]
+};
+
+let nextId = 1;
+function newId() { return nextId++; }
+
+let hoveredHandle = null;  // { type, index, handle } — handle: 'body','p1','p2','center','edge'
+let dragging = null;
+let dragStart = { x: 0, y: 0 };
+let lineStart = null;
+let circleStart = null;
+let currentCurve = null;
+let mouse = { x: 0, y: 0 };
+let snapTarget = null; // point index we're snapping to, or null
+
+// ─── Colors ───
+const COLORS = {
+  invCircle: '#6c8aff',
+  invCircleGlow: 'rgba(108,138,255,0.15)',
+  invCenter: '#a78bfa',
+  original: '#67e8f9',
+  originalGlow: 'rgba(103,232,249,0.3)',
+  inverted: '#f472b6',
+  invertedGlow: 'rgba(244,114,182,0.3)',
+  construction: 'rgba(255,255,255,0.06)',
+  hover: '#fbbf24',
+  hoverGlow: 'rgba(251,191,36,0.3)',
+  snap: '#34d399',
+  snapGlow: 'rgba(52,211,153,0.25)',
+  handle: 'rgba(255,255,255,0.7)',
+  handleHover: '#fbbf24',
+};
+
+// ═══════════ POINT RESOLUTION ═══════════
+// Points are stored in objects.points with unique ids.
+// Lines/circles reference points by id or by inline {x,y}.
+
+function resolvePoint(ref) {
+  if (typeof ref === 'number') {
+    const pt = objects.points.find(p => p.id === ref);
+    return pt || { x: 0, y: 0 };
+  }
+  return ref; // inline {x, y}
+}
+
+function setResolvedPoint(ref, x, y) {
+  if (typeof ref === 'number') {
+    const pt = objects.points.find(p => p.id === ref);
+    if (pt) { pt.x = x; pt.y = y; }
+  }
+}
+
+// ═══════════ SNAP SYSTEM ═══════════
+
+function findSnap(mx, my, excludeIds) {
+  if (!enableSnap) return null;
+  let best = null, bestD = snapDist;
+  for (const p of objects.points) {
+    if (excludeIds && excludeIds.includes(p.id)) continue;
+    const d = Math.sqrt((mx - p.x) ** 2 + (my - p.y) ** 2);
+    if (d < bestD) { bestD = d; best = p; }
+  }
+  return best;
+}
+
+function snapCoord(mx, my, excludeIds) {
+  const s = findSnap(mx, my, excludeIds);
+  snapTarget = s;
+  return s ? { x: s.x, y: s.y, id: s.id } : { x: mx, y: my, id: null };
+}
+
+
+// ═══════════ INVERSION MATH ═══════════
+
+function invertPoint(px, py) {
+  const dx = px - inversionCenter.x;
+  const dy = py - inversionCenter.y;
+  const d2 = dx * dx + dy * dy;
+  if (d2 < 0.01) return { x: px + 1e6, y: py + 1e6 };
+  const r2 = effectiveRadius * effectiveRadius;
+  return {
+    x: inversionCenter.x + (r2 * dx) / d2,
+    y: inversionCenter.y + (r2 * dy) / d2
+  };
+}
+
+function invertCircle(cx, cy, r) {
+  const dx = cx - inversionCenter.x;
+  const dy = cy - inversionCenter.y;
+  const d2 = dx * dx + dy * dy;
+  const R2 = effectiveRadius * effectiveRadius;
+  const dist = Math.sqrt(d2);
+
+  if (Math.abs(dist - r) < 2) {
+    const len = Math.sqrt(dx * dx + dy * dy);
+    if (len < 0.01) return { type: 'line', x1: -W, y1: 0, x2: W, y2: 0 };
+    const nx = dx / len, ny = dy / len;
+    const farX = cx + nx * r, farY = cy + ny * r;
+    const inv = invertPoint(farX, farY);
+    const perpX = -ny, perpY = nx;
+    return {
+      type: 'line',
+      x1: inv.x - perpX * 2000, y1: inv.y - perpY * 2000,
+      x2: inv.x + perpX * 2000, y2: inv.y + perpY * 2000
+    };
+  }
+
+  const s = d2 - r * r;
+  if (Math.abs(s) < 0.01) return invertCircle(cx, cy, r * 0.999);
+  const newCx = inversionCenter.x + R2 * dx / s;
+  const newCy = inversionCenter.y + R2 * dy / s;
+  const newR = Math.abs(R2 * r / s);
+  return { type: 'circle', cx: newCx, cy: newCy, r: newR };
+}
+
+function invertLine(x1, y1, x2, y2) {
+  const dx = x2 - x1, dy = y2 - y1;
+  const len = Math.sqrt(dx * dx + dy * dy);
+  if (len < 0.01) return null;
+  const nx = dx / len, ny = dy / len;
+  const t = (inversionCenter.x - x1) * nx + (inversionCenter.y - y1) * ny;
+  const closestX = x1 + t * nx, closestY = y1 + t * ny;
+  const dist = Math.sqrt((inversionCenter.x - closestX) ** 2 + (inversionCenter.y - closestY) ** 2);
+
+  if (dist < 3) {
+    return { type: 'line', x1, y1, x2, y2 };
+  }
+
+  const invClosest = invertPoint(closestX, closestY);
+  const cCx = (inversionCenter.x + invClosest.x) / 2;
+  const cCy = (inversionCenter.y + invClosest.y) / 2;
+  const cR = Math.sqrt((invClosest.x - inversionCenter.x) ** 2 + (invClosest.y - inversionCenter.y) ** 2) / 2;
+  return { type: 'circle', cx: cCx, cy: cCy, r: cR };
+}
+
+
+// ═══════════ DRAWING HELPERS ═══════════
+
+function drawGlowCircle(x, y, r, color, glowColor, lineWidth) {
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.strokeStyle = glowColor;
+  ctx.lineWidth = lineWidth + 6;
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = lineWidth;
+  ctx.stroke();
+}
+
+function drawGlowLine(x1, y1, x2, y2, color, glowColor, lineWidth) {
+  ctx.beginPath();
+  ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
+  ctx.strokeStyle = glowColor;
+  ctx.lineWidth = lineWidth + 4;
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(x1, y1); ctx.lineTo(x2, y2);
+  ctx.strokeStyle = color;
+  ctx.lineWidth = lineWidth;
+  ctx.stroke();
+}
+
+function drawGlowPoint(x, y, r, color, glowColor) {
+  ctx.beginPath();
+  ctx.arc(x, y, r + 4, 0, Math.PI * 2);
+  ctx.fillStyle = glowColor;
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI * 2);
+  ctx.fillStyle = color;
+  ctx.fill();
+}
+
+function drawHandle(x, y, isHovered) {
+  const col = isHovered ? COLORS.handleHover : COLORS.handle;
+  const glow = isHovered ? COLORS.hoverGlow : 'rgba(255,255,255,0.15)';
+  // outer ring
+  ctx.beginPath();
+  ctx.arc(x, y, 6, 0, Math.PI * 2);
+  ctx.strokeStyle = col;
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  // inner dot
+  ctx.beginPath();
+  ctx.arc(x, y, 2.5, 0, Math.PI * 2);
+  ctx.fillStyle = col;
+  ctx.fill();
+  if (isHovered) {
+    ctx.beginPath();
+    ctx.arc(x, y, 10, 0, Math.PI * 2);
+    ctx.fillStyle = glow;
+    ctx.fill();
+  }
+}
+
+
+// ═══════════ MAIN DRAWING ═══════════
+
+function drawInversionCircle() {
+  // Outer glow rings
+  for (let i = 3; i >= 1; i--) {
+    ctx.beginPath();
+    ctx.arc(inversionCenter.x, inversionCenter.y, effectiveRadius + i * 8, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(108,138,255,${0.03 / i})`;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+  }
+
+  // Fill
+  ctx.beginPath();
+  ctx.arc(inversionCenter.x, inversionCenter.y, effectiveRadius, 0, Math.PI * 2);
+  const grad = ctx.createRadialGradient(
+    inversionCenter.x, inversionCenter.y, 0,
+    inversionCenter.x, inversionCenter.y, effectiveRadius
+  );
+  grad.addColorStop(0, 'rgba(108,138,255,0.03)');
+  grad.addColorStop(0.7, 'rgba(108,138,255,0.01)');
+  grad.addColorStop(1, 'rgba(108,138,255,0.06)');
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Main circle
+  drawGlowCircle(inversionCenter.x, inversionCenter.y, effectiveRadius, COLORS.invCircle, COLORS.invCircleGlow, 2);
+
+  // Center dot
+  drawGlowPoint(inversionCenter.x, inversionCenter.y, 5, COLORS.invCenter, 'rgba(167,139,250,0.3)');
+
+  // Labels
+  ctx.font = '11px JetBrains Mono';
+  ctx.fillStyle = 'rgba(167,139,250,0.6)';
+  ctx.textAlign = 'center';
+  ctx.fillText('O', inversionCenter.x, inversionCenter.y + 20);
+  ctx.fillText(`r = ${Math.round(effectiveRadius)}`, inversionCenter.x, inversionCenter.y - effectiveRadius - 12);
+}
+
+// Adaptive sampling: pack more points near the inversion center
+function adaptiveSamples(fixedAxis, fixedVal, varyMin, varyMax, isVertical) {
+  const pts = [];
+  const N = 300;
+  const center = isVertical ? inversionCenter.y : inversionCenter.x;
+  for (let i = 0; i <= N; i++) {
+    // Map i to [0,1], apply a shaping function that concentrates samples near center
+    let t = i / N;
+    let v = varyMin + t * (varyMax - varyMin);
+    pts.push(isVertical ? { x: fixedVal, y: v } : { x: v, y: fixedVal });
+  }
+  // Add extra samples very close to the center for smoothness
+  const cVal = isVertical ? inversionCenter.y : inversionCenter.x;
+  const r = effectiveRadius;
+  for (let k = -60; k <= 60; k++) {
+    const v = cVal + (k / 60) * r * 2;
+    if (v >= varyMin && v <= varyMax) {
+      pts.push(isVertical ? { x: fixedVal, y: v } : { x: v, y: fixedVal });
+    }
+  }
+  // Sort by the varying axis
+  pts.sort((a, b) => isVertical ? a.y - b.y : a.x - b.x);
+  return pts;
+}
+
+function drawGrid() {
+  if (!showGrid) return;
+  const spacing = 60;
+  const ox = inversionCenter.x % spacing;
+  const oy = inversionCenter.y % spacing;
+  const ga = gridOpacity;
+  const gi = gridInvOpacity;
+
+  for (let x = ox - spacing; x < W + spacing; x += spacing) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0); ctx.lineTo(x, H);
+    ctx.strokeStyle = `rgba(103,232,249,${0.18 * ga})`;
+    ctx.lineWidth = 0.5;
+    ctx.stroke();
+    if (gi > 0) drawInvertedCurve(
+      adaptiveSamples('x', x, 0, H, true),
+      `rgba(244,114,182,${0.25 * gi})`, 1.2
+    );
+  }
+
+  for (let y = oy - spacing; y < H + spacing; y += spacing) {
+    ctx.beginPath();
+    ctx.moveTo(0, y); ctx.lineTo(W, y);
+    ctx.strokeStyle = `rgba(103,232,249,${0.18 * ga})`;
+    ctx.lineWidth = 0.5;
+    ctx.stroke();
+    if (gi > 0) drawInvertedCurve(
+      adaptiveSamples('y', y, 0, W, false),
+      `rgba(244,114,182,${0.25 * gi})`, 1.2
+    );
+  }
+}
+
+function drawInvertedCurve(points, color, lineWidth) {
+  if (points.length < 2) return;
+  const invPts = points.map(p => invertPoint(p.x, p.y));
+  ctx.beginPath();
+  ctx.moveTo(invPts[0].x, invPts[0].y);
+  for (let i = 1; i < invPts.length; i++) {
+    const dx = invPts[i].x - invPts[i - 1].x;
+    const dy = invPts[i].y - invPts[i - 1].y;
+    if (dx * dx + dy * dy > 500000) {
+      ctx.moveTo(invPts[i].x, invPts[i].y);
+    } else {
+      ctx.lineTo(invPts[i].x, invPts[i].y);
+    }
+  }
+  ctx.strokeStyle = color;
+  ctx.lineWidth = lineWidth;
+  ctx.stroke();
+}
+
+function drawSnapIndicator() {
+  if (snapTarget && (tool === 'line' || tool === 'circle' || tool === 'point')) {
+    ctx.beginPath();
+    ctx.arc(snapTarget.x, snapTarget.y, 12, 0, Math.PI * 2);
+    ctx.strokeStyle = COLORS.snap;
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([3, 3]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.beginPath();
+    ctx.arc(snapTarget.x, snapTarget.y, 16, 0, Math.PI * 2);
+    ctx.fillStyle = COLORS.snapGlow;
+    ctx.fill();
+  }
+}
+
+function drawObjects() {
+  const isMoveTool = tool === 'move';
+
+  // ─── Points ───
+  objects.points.forEach((p, i) => {
+    const isHov = hoveredHandle && hoveredHandle.type === 'point' && hoveredHandle.index === i;
+    const col = isHov ? COLORS.hover : COLORS.original;
+    const glow = isHov ? COLORS.hoverGlow : COLORS.originalGlow;
+
+    drawGlowPoint(p.x, p.y, 5, col, glow);
+
+    // Inverted point
+    const inv = invertPoint(p.x, p.y);
+    drawGlowPoint(inv.x, inv.y, 5, COLORS.inverted, COLORS.invertedGlow);
+
+    // Construction line
+    if (showConstruction) {
+      ctx.beginPath();
+      ctx.moveTo(inversionCenter.x, inversionCenter.y);
+      ctx.lineTo(p.x, p.y);
+      ctx.lineTo(inv.x, inv.y);
+      ctx.strokeStyle = COLORS.construction;
+      ctx.lineWidth = 1;
+      ctx.setLineDash([4, 4]);
+      ctx.stroke();
+      ctx.setLineDash([]);
+    }
+  });
+
+  // ─── Lines ───
+  objects.lines.forEach((l, i) => {
+    const p1 = resolvePoint(l.p1);
+    const p2 = resolvePoint(l.p2);
+    const isHov = hoveredHandle && hoveredHandle.type === 'line' && hoveredHandle.index === i;
+    const col = isHov ? COLORS.hover : COLORS.original;
+    const glow = isHov ? COLORS.hoverGlow : 'rgba(103,232,249,0.15)';
+
+    // Extend line to screen edges
+    const dx = p2.x - p1.x, dy = p2.y - p1.y;
+    const len = Math.sqrt(dx * dx + dy * dy);
+    if (len < 0.01) return;
+    const nx = dx / len, ny = dy / len;
+    drawGlowLine(
+      p1.x - nx * 3000, p1.y - ny * 3000,
+      p2.x + nx * 3000, p2.y + ny * 3000,
+      col, glow, 1.5
+    );
+
+    // Inverted
+    const result = invertLine(p1.x, p1.y, p2.x, p2.y);
+    if (result) {
+      if (result.type === 'circle') {
+        drawGlowCircle(result.cx, result.cy, result.r, COLORS.inverted, COLORS.invertedGlow, 2);
+      } else {
+        drawGlowLine(result.x1, result.y1, result.x2, result.y2, COLORS.inverted, COLORS.invertedGlow, 1.5);
+      }
+    }
+
+    // Endpoint handles (in move mode)
+    if (isMoveTool) {
+      const h1Hov = isHov && hoveredHandle.handle === 'p1';
+      const h2Hov = isHov && hoveredHandle.handle === 'p2';
+      drawHandle(p1.x, p1.y, h1Hov);
+      drawHandle(p2.x, p2.y, h2Hov);
+    }
+  });
+
+  // ─── Circles ───
+  objects.circles.forEach((c, i) => {
+    const center = resolvePoint(c.center);
+    const r = Math.sqrt((c.edge.x - center.x) ** 2 + (c.edge.y - center.y) ** 2);
+    const isHov = hoveredHandle && hoveredHandle.type === 'circle' && hoveredHandle.index === i;
+    const col = isHov ? COLORS.hover : COLORS.original;
+    const glow = isHov ? COLORS.hoverGlow : 'rgba(103,232,249,0.15)';
+
+    drawGlowCircle(center.x, center.y, r, col, glow, 2);
+
+    // Inverted
+    if (r > 0.5) {
+      const result = invertCircle(center.x, center.y, r);
+      if (result) {
+        if (result.type === 'circle' && result.r < 5000) {
+          drawGlowCircle(result.cx, result.cy, result.r, COLORS.inverted, COLORS.invertedGlow, 2);
+        } else if (result.type === 'line') {
+          drawGlowLine(result.x1, result.y1, result.x2, result.y2, COLORS.inverted, COLORS.invertedGlow, 1.5);
+        }
+      }
+    }
+
+    // Handles
+    if (isMoveTool) {
+      const chHov = isHov && hoveredHandle.handle === 'center';
+      const ehHov = isHov && hoveredHandle.handle === 'edge';
+      drawHandle(center.x, center.y, chHov);
+      drawHandle(c.edge.x, c.edge.y, ehHov);
+    }
+  });
+
+  // ─── Curves ───
+  objects.curves.forEach((pts, i) => {
+    if (pts.length < 2) return;
+    const isHov = hoveredHandle && hoveredHandle.type === 'curve' && hoveredHandle.index === i;
+    const col = isHov ? COLORS.hover : COLORS.original;
+    const glow = isHov ? COLORS.hoverGlow : 'rgba(103,232,249,0.15)';
+
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, pts[0].y);
+    for (let j = 1; j < pts.length; j++) ctx.lineTo(pts[j].x, pts[j].y);
+    ctx.strokeStyle = glow;
+    ctx.lineWidth = 5;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x, pts[0].y);
+    for (let j = 1; j < pts.length; j++) ctx.lineTo(pts[j].x, pts[j].y);
+    ctx.strokeStyle = col;
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    drawInvertedCurve(pts, COLORS.inverted, 2);
+  });
+
+  // ─── In-progress shapes ───
+  if (lineStart && tool === 'line') {
+    const snapped = snapCoord(mouse.x, mouse.y, []);
+    const ex = snapped.x, ey = snapped.y;
+    drawGlowLine(lineStart.x, lineStart.y, ex, ey, 'rgba(103,232,249,0.5)', 'rgba(103,232,249,0.15)', 1.5);
+    // live preview of inversion
+    const result = invertLine(lineStart.x, lineStart.y, ex, ey);
+    if (result) {
+      if (result.type === 'circle') {
+        drawGlowCircle(result.cx, result.cy, Math.min(result.r, 3000), 'rgba(244,114,182,0.35)', 'rgba(244,114,182,0.1)', 1.5);
+      } else {
+        drawGlowLine(result.x1, result.y1, result.x2, result.y2, 'rgba(244,114,182,0.35)', 'rgba(244,114,182,0.1)', 1.5);
+      }
+    }
+  }
+
+  if (circleStart && tool === 'circle') {
+    const snapped = snapCoord(mouse.x, mouse.y, []);
+    const r = Math.sqrt((snapped.x - circleStart.x) ** 2 + (snapped.y - circleStart.y) ** 2);
+    drawGlowCircle(circleStart.x, circleStart.y, r, 'rgba(103,232,249,0.5)', 'rgba(103,232,249,0.15)', 1.5);
+    // live preview
+    if (r > 2) {
+      const result = invertCircle(circleStart.x, circleStart.y, r);
+      if (result) {
+        if (result.type === 'circle' && result.r < 5000) {
+          drawGlowCircle(result.cx, result.cy, result.r, 'rgba(244,114,182,0.35)', 'rgba(244,114,182,0.1)', 1.5);
+        } else if (result.type === 'line') {
+          drawGlowLine(result.x1, result.y1, result.x2, result.y2, 'rgba(244,114,182,0.35)', 'rgba(244,114,182,0.1)', 1.5);
+        }
+      }
+    }
+  }
+
+  if (currentCurve && currentCurve.length > 1) {
+    // Original in-progress curve
+    ctx.beginPath();
+    ctx.moveTo(currentCurve[0].x, currentCurve[0].y);
+    for (let j = 1; j < currentCurve.length; j++) ctx.lineTo(currentCurve[j].x, currentCurve[j].y);
+    ctx.strokeStyle = 'rgba(103,232,249,0.5)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+    // Live inverted preview
+    drawInvertedCurve(currentCurve, 'rgba(244,114,182,0.45)', 2);
+  }
+
+  drawSnapIndicator();
+}
+
+
+// ═══════════ HIT TESTING ═══════════
+
+function hitTestHandles(mx, my) {
+  const T = 14; // threshold
+
+  // Check inversion center
+  if (Math.sqrt((mx - inversionCenter.x) ** 2 + (my - inversionCenter.y) ** 2) < T)
+    return { type: 'invCenter', index: -1, handle: 'center' };
+
+  // Line endpoints
+  for (let i = objects.lines.length - 1; i >= 0; i--) {
+    const p1 = resolvePoint(objects.lines[i].p1);
+    const p2 = resolvePoint(objects.lines[i].p2);
+    if (Math.sqrt((mx - p1.x) ** 2 + (my - p1.y) ** 2) < T)
+      return { type: 'line', index: i, handle: 'p1' };
+    if (Math.sqrt((mx - p2.x) ** 2 + (my - p2.y) ** 2) < T)
+      return { type: 'line', index: i, handle: 'p2' };
+  }
+
+  // Circle handles
+  for (let i = objects.circles.length - 1; i >= 0; i--) {
+    const center = resolvePoint(objects.circles[i].center);
+    const edge = objects.circles[i].edge;
+    if (Math.sqrt((mx - edge.x) ** 2 + (my - edge.y) ** 2) < T)
+      return { type: 'circle', index: i, handle: 'edge' };
+    if (Math.sqrt((mx - center.x) ** 2 + (my - center.y) ** 2) < T)
+      return { type: 'circle', index: i, handle: 'center' };
+  }
+
+  // Points
+  for (let i = objects.points.length - 1; i >= 0; i--) {
+    const p = objects.points[i];
+    if (Math.sqrt((mx - p.x) ** 2 + (my - p.y) ** 2) < T)
+      return { type: 'point', index: i, handle: 'body' };
+  }
+
+  // Line body
+  for (let i = objects.lines.length - 1; i >= 0; i--) {
+    const p1 = resolvePoint(objects.lines[i].p1);
+    const p2 = resolvePoint(objects.lines[i].p2);
+    const dx = p2.x - p1.x, dy = p2.y - p1.y;
+    const len = Math.sqrt(dx * dx + dy * dy);
+    if (len < 0.01) continue;
+    const t = ((mx - p1.x) * dx + (my - p1.y) * dy) / (len * len);
+    const px = p1.x + Math.max(0, Math.min(1, t)) * dx;
+    const py = p1.y + Math.max(0, Math.min(1, t)) * dy;
+    if (Math.sqrt((mx - px) ** 2 + (my - py) ** 2) < T)
+      return { type: 'line', index: i, handle: 'body' };
+  }
+
+  // Circle body
+  for (let i = objects.circles.length - 1; i >= 0; i--) {
+    const center = resolvePoint(objects.circles[i].center);
+    const edge = objects.circles[i].edge;
+    const r = Math.sqrt((edge.x - center.x) ** 2 + (edge.y - center.y) ** 2);
+    const dist = Math.abs(Math.sqrt((mx - center.x) ** 2 + (my - center.y) ** 2) - r);
+    if (dist < T)
+      return { type: 'circle', index: i, handle: 'body' };
+  }
+
+  // Curves
+  for (let i = objects.curves.length - 1; i >= 0; i--) {
+    for (const pt of objects.curves[i]) {
+      if (Math.sqrt((mx - pt.x) ** 2 + (my - pt.y) ** 2) < T)
+        return { type: 'curve', index: i, handle: 'body' };
+    }
+  }
+
+  return null;
+}
+
+
+// ═══════════ INTERACTION ═══════════
+
+function isPanelHit(mx, my) {
+  const panel = document.getElementById('panel');
+  const r = panel.getBoundingClientRect();
+  return mx >= r.left && mx <= r.right && my >= r.top && my <= r.bottom;
+}
+
+canvas.addEventListener('mousedown', e => {
+  if (isPanelHit(e.clientX, e.clientY)) return;
+  const mx = e.clientX, my = e.clientY;
+  mouse.x = mx; mouse.y = my;
+
+  // ─── Move tool ───
+  if (tool === 'move') {
+    const hit = hitTestHandles(mx, my);
+    if (!hit) return;
+
+    dragging = hit;
+    dragStart = { x: mx, y: my };
+    canvas.style.cursor = 'grabbing';
+    return;
+  }
+
+  // ─── Point tool ───
+  if (tool === 'point') {
+    const s = snapCoord(mx, my, []);
+    if (!s.id) {
+      objects.points.push({ x: s.x, y: s.y, id: newId() });
+    }
+    return;
+  }
+
+  // ─── Line tool ───
+  if (tool === 'line') {
+    const s = snapCoord(mx, my, []);
+    if (!lineStart) {
+      // First click: if snapped to existing point, store its id; otherwise create new point
+      if (s.id) {
+        lineStart = { x: s.x, y: s.y, ref: s.id };
+      } else {
+        const id = newId();
+        objects.points.push({ x: s.x, y: s.y, id });
+        lineStart = { x: s.x, y: s.y, ref: id };
+      }
+    } else {
+      // Second click: finalize
+      let ref2;
+      if (s.id) {
+        ref2 = s.id;
+      } else {
+        const id = newId();
+        objects.points.push({ x: s.x, y: s.y, id });
+        ref2 = id;
+      }
+      objects.lines.push({ p1: lineStart.ref, p2: ref2 });
+      lineStart = null;
+    }
+    return;
+  }
+
+  // ─── Circle tool ───
+  if (tool === 'circle') {
+    const s = snapCoord(mx, my, []);
+    if (!circleStart) {
+      if (s.id) {
+        circleStart = { x: s.x, y: s.y, ref: s.id };
+      } else {
+        const id = newId();
+        objects.points.push({ x: s.x, y: s.y, id });
+        circleStart = { x: s.x, y: s.y, ref: id };
+      }
+    } else {
+      const edgeX = s.x, edgeY = s.y;
+      const r = Math.sqrt((edgeX - circleStart.x) ** 2 + (edgeY - circleStart.y) ** 2);
+      if (r > 3) {
+        objects.circles.push({ center: circleStart.ref, edge: { x: edgeX, y: edgeY } });
+      }
+      circleStart = null;
+    }
+    return;
+  }
+
+  // ─── Curve tool ───
+  if (tool === 'curve') {
+    currentCurve = [{ x: mx, y: my }];
+  }
+});
+
+canvas.addEventListener('mousemove', e => {
+  const mx = e.clientX, my = e.clientY;
+  mouse.x = mx; mouse.y = my;
+
+  // ─── Dragging ───
+  if (dragging) {
+    if (dragging.type === 'invCenter') {
+      inversionCenter.x = mx;
+      inversionCenter.y = my;
+      return;
+    }
+
+    if (dragging.type === 'point') {
+      const p = objects.points[dragging.index];
+      p.x = mx; p.y = my;
+      return;
+    }
+
+    if (dragging.type === 'line') {
+      const l = objects.lines[dragging.index];
+      if (dragging.handle === 'p1') {
+        const ref = l.p1;
+        if (typeof ref === 'number') {
+          setResolvedPoint(ref, mx, my);
+        } else {
+          l.p1.x = mx; l.p1.y = my;
+        }
+      } else if (dragging.handle === 'p2') {
+        const ref = l.p2;
+        if (typeof ref === 'number') {
+          setResolvedPoint(ref, mx, my);
+        } else {
+          l.p2.x = mx; l.p2.y = my;
+        }
+      } else if (dragging.handle === 'body') {
+        const dx = mx - dragStart.x, dy = my - dragStart.y;
+        const p1 = resolvePoint(l.p1);
+        const p2 = resolvePoint(l.p2);
+        // Move both endpoints
+        if (typeof l.p1 === 'number') setResolvedPoint(l.p1, p1.x + dx, p1.y + dy);
+        else { l.p1.x += dx; l.p1.y += dy; }
+        if (typeof l.p2 === 'number') setResolvedPoint(l.p2, p2.x + dx, p2.y + dy);
+        else { l.p2.x += dx; l.p2.y += dy; }
+        dragStart.x = mx; dragStart.y = my;
+      }
+      return;
+    }
+
+    if (dragging.type === 'circle') {
+      const c = objects.circles[dragging.index];
+      if (dragging.handle === 'edge') {
+        c.edge.x = mx; c.edge.y = my;
+      } else if (dragging.handle === 'center') {
+        const ref = c.center;
+        if (typeof ref === 'number') {
+          setResolvedPoint(ref, mx, my);
+        } else {
+          c.center.x = mx; c.center.y = my;
+        }
+      } else if (dragging.handle === 'body') {
+        const dx = mx - dragStart.x, dy = my - dragStart.y;
+        const center = resolvePoint(c.center);
+        if (typeof c.center === 'number') setResolvedPoint(c.center, center.x + dx, center.y + dy);
+        else { c.center.x += dx; c.center.y += dy; }
+        c.edge.x += dx; c.edge.y += dy;
+        dragStart.x = mx; dragStart.y = my;
+      }
+      return;
+    }
+
+    if (dragging.type === 'curve') {
+      const pts = objects.curves[dragging.index];
+      const dx = mx - dragStart.x, dy = my - dragStart.y;
+      for (const pt of pts) { pt.x += dx; pt.y += dy; }
+      dragStart.x = mx; dragStart.y = my;
+      return;
+    }
+    return;
+  }
+
+  // ─── Curve drawing ───
+  if (currentCurve && tool === 'curve') {
+    currentCurve.push({ x: mx, y: my });
+    return;
+  }
+
+  // ─── Snap indicator for placement tools ───
+  if (tool === 'line' || tool === 'circle' || tool === 'point') {
+    snapCoord(mx, my, []);
+  } else {
+    snapTarget = null;
+  }
+
+  // ─── Hover detection ───
+  if (tool === 'move') {
+    hoveredHandle = hitTestHandles(mx, my);
+    canvas.style.cursor = hoveredHandle ? 'grab' : 'crosshair';
+  } else {
+    hoveredHandle = null;
+  }
+});
+
+canvas.addEventListener('mouseup', e => {
+  if (currentCurve && tool === 'curve' && currentCurve.length > 3) {
+    const simplified = [];
+    for (let i = 0; i < currentCurve.length; i += 3) simplified.push(currentCurve[i]);
+    simplified.push(currentCurve[currentCurve.length - 1]);
+    objects.curves.push(simplified);
+  }
+  currentCurve = null;
+  dragging = null;
+  canvas.style.cursor = (tool === 'move' && hoveredHandle) ? 'grab' : 'crosshair';
+});
+
+canvas.addEventListener('wheel', e => {
+  e.preventDefault();
+  inversionRadius = Math.max(20, Math.min(600, inversionRadius - e.deltaY * 0.3));
+  document.getElementById('radius-slider').value = inversionRadius;
+  document.getElementById('radius-val').textContent = Math.round(inversionRadius);
+}, { passive: false });
+
+window.addEventListener('keydown', e => {
+  if (e.key === 'Delete' || e.key === 'Backspace') {
+    if (hoveredHandle) {
+      const { type, index } = hoveredHandle;
+      if (type === 'point') {
+        const pt = objects.points[index];
+        // Remove lines/circles that reference this point
+        objects.lines = objects.lines.filter(l => l.p1 !== pt.id && l.p2 !== pt.id);
+        objects.circles = objects.circles.filter(c => c.center !== pt.id);
+        objects.points.splice(index, 1);
+      }
+      else if (type === 'line') objects.lines.splice(index, 1);
+      else if (type === 'circle') objects.circles.splice(index, 1);
+      else if (type === 'curve') objects.curves.splice(index, 1);
+      hoveredHandle = null;
+    }
+  }
+  if (e.key === 'Escape') {
+    lineStart = null;
+    circleStart = null;
+    currentCurve = null;
+  }
+});
+
+
+// ═══════════ UI CONTROLS ═══════════
+
+document.querySelectorAll('.tool-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelector('.tool-btn.active')?.classList.remove('active');
+    btn.classList.add('active');
+    tool = btn.dataset.tool;
+    lineStart = null;
+    circleStart = null;
+    currentCurve = null;
+    snapTarget = null;
+  });
+});
+
+document.getElementById('radius-slider').addEventListener('input', e => {
+  inversionRadius = parseInt(e.target.value);
+  document.getElementById('radius-val').textContent = inversionRadius;
+});
+
+// Grid opacity
+document.getElementById('grid-opacity').addEventListener('input', e => {
+  gridOpacity = parseInt(e.target.value) / 100;
+  document.getElementById('grid-opacity-val').textContent = parseInt(e.target.value) + '%';
+});
+
+// Inverted grid opacity
+document.getElementById('grid-inv-opacity').addEventListener('input', e => {
+  gridInvOpacity = parseInt(e.target.value) / 100;
+  document.getElementById('grid-inv-opacity-val').textContent = parseInt(e.target.value) + '%';
+});
+
+// Snap distance
+document.getElementById('snap-dist').addEventListener('input', e => {
+  snapDist = parseInt(e.target.value);
+  document.getElementById('snap-dist-val').textContent = snapDist;
+});
+
+// Toggles
+function setupToggle(id, getter, setter) {
+  document.getElementById(id).addEventListener('click', () => {
+    const btn = document.getElementById(id);
+    btn.classList.toggle('on');
+    setter(btn.classList.contains('on'));
+  });
+}
+setupToggle('toggle-grid', () => showGrid, v => showGrid = v);
+setupToggle('toggle-construction', () => showConstruction, v => showConstruction = v);
+setupToggle('toggle-pulse', () => animatePulse, v => animatePulse = v);
+setupToggle('toggle-snap', () => enableSnap, v => enableSnap = v);
+
+// Settings gear dropdown
+const settingsBtn = document.getElementById('settings-btn');
+const settingsDropdown = document.getElementById('settings-dropdown');
+
+settingsBtn.addEventListener('click', e => {
+  e.stopPropagation();
+  const isOpen = !settingsDropdown.classList.contains('hidden');
+  settingsDropdown.classList.toggle('hidden');
+  settingsBtn.classList.toggle('open', !isOpen);
+});
+
+document.addEventListener('click', e => {
+  if (!settingsDropdown.contains(e.target) && !settingsBtn.contains(e.target)) {
+    settingsDropdown.classList.add('hidden');
+    settingsBtn.classList.remove('open');
+  }
+});
+
+function clearAll() {
+  objects.points = [];
+  objects.lines = [];
+  objects.circles = [];
+  objects.curves = [];
+  hoveredHandle = null;
+  lineStart = null;
+  circleStart = null;
+  currentCurve = null;
+  snapTarget = null;
+  nextId = 1;
+}
+
+function loadPreset() {
+  clearAll();
+  const cx = inversionCenter.x;
+  const cy = inversionCenter.y;
+  const r = inversionRadius;
+
+  // Points
+  const id1 = newId(); objects.points.push({ x: cx + r * 0.6, y: cy - r * 0.6, id: id1 });
+  const id2 = newId(); objects.points.push({ x: cx + r * 1.2, y: cy - r * 0.6, id: id2 });
+  const id3 = newId(); objects.points.push({ x: cx - r * 1.2, y: cy - r * 0.3, id: id3 });
+  const id4 = newId(); objects.points.push({ x: cx - r * 0.5, y: cy + r * 0.4, id: id4 });
+  const id5 = newId(); objects.points.push({ x: cx + r * 0.5, y: cy + r * 1.5, id: id5 });
+  const id6 = newId(); objects.points.push({ x: cx + r * 0.5, y: cy - r * 1.5, id: id6 });
+  const id7 = newId(); objects.points.push({ x: cx + r * 1.3, y: cy + r * 0.2, id: id7 });
+
+  // A circle passing through center (maps to a line) — center at offset, radius = distance to O
+  const distToCenter = Math.sqrt((cx + r * 0.6 - cx) ** 2);
+  const id8 = newId(); objects.points.push({ x: cx + r * 0.6, y: cy, id: id8 });
+  objects.circles.push({
+    center: id8,
+    edge: { x: cx + r * 0.6 + r * 0.6, y: cy }
+  });
+
+  // A circle not through center
+  objects.circles.push({
+    center: id3,
+    edge: { x: cx - r * 1.2 + r * 0.35, y: cy - r * 0.3 }
+  });
+
+  // A line not through center (vertical)
+  objects.lines.push({ p1: id6, p2: id5 });
+
+  // A line through center area
+  const id9 = newId(); objects.points.push({ x: cx - r * 2, y: cy - r * 0.8, id: id9 });
+  const id10 = newId(); objects.points.push({ x: cx + r * 2, y: cy + r * 0.8, id: id10 });
+  objects.lines.push({ p1: id9, p2: id10 });
+
+  // Standalone points
+  // id4 and id7 are standalone
+}
+
+
+// ═══════════ MAIN LOOP ═══════════
+
+function centerInversion() {
+  // Place center at the midpoint of the full canvas width and height.
+  // The panel is an overlay — centering in the full page looks best.
+  inversionCenter.x = W / 2;
+  inversionCenter.y = H / 2;
+}
+
+function frame(t) {
+  ctx.clearRect(0, 0, W, H);
+  pulsePhase = t * 0.003;
+
+  effectiveRadius = animatePulse
+    ? inversionRadius + Math.sin(pulsePhase) * inversionRadius * 0.12
+    : inversionRadius;
+
+  drawGrid();
+  drawObjects();
+  drawInversionCircle();
+
+  requestAnimationFrame(frame);
+}
+
+// Wait for full layout before centering + starting
+window.addEventListener('load', () => {
+  resize();
+  centerInversion();
+  loadPreset();
+  requestAnimationFrame(frame);
+});
+</script>
+</body>
+</html>
