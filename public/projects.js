@@ -44,5 +44,12 @@ const PROJECTS = [
     category: "physics",
     emoji: "\u27E8\u03C8\u27E9",
     folder: "quantum-wave-particle"
+  },
+  {
+    id: "characteristic-lines",
+    title: "Characteristic Lines",
+    category: "math",
+    emoji: "〰️",
+    folder: "characteristic-lines"
   }
 ];
