@@ -1,0 +1,1004 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Finite Differences — Discrete Representation</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #0a0a0f;
+    color: #c8c8d0;
+    font-family: 'JetBrains Mono', monospace;
+    overflow: hidden;
+    height: 100vh;
+    display: flex;
+  }
+
+  .sidebar {
+    width: 340px; min-width: 340px; height: 100vh;
+    background: rgba(10,10,18,0.95);
+    backdrop-filter: blur(14px);
+    border-right: 1px solid rgba(255,255,255,0.06);
+    display: flex; flex-direction: column; z-index: 10; overflow-y: auto;
+  }
+  .sidebar::-webkit-scrollbar { width: 4px; }
+  .sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+  .sidebar-header { padding: 20px 24px 0; }
+  .sidebar-header h1 { font-family: 'Source Serif 4', serif; font-weight: 300; font-size: 17px; color: #e8e8f0; margin-bottom: 2px; letter-spacing: 0.5px; }
+  .sidebar-header .subtitle { font-size: 11px; color: #666; margin-bottom: 16px; font-weight: 300; }
+
+  .tabs { display: flex; gap: 0; padding: 0 24px; margin-bottom: 16px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+  .tab { padding: 10px 12px; font-size: 10px; text-transform: uppercase; letter-spacing: 1.2px; color: #555; cursor: pointer; border-bottom: 2px solid transparent; transition: all 0.3s; font-family: 'JetBrains Mono', monospace; background: none; border-top: none; border-left: none; border-right: none; white-space: nowrap; }
+  .tab:hover { color: #888; }
+  .tab.active { color: #6c8aff; border-bottom-color: #6c8aff; }
+
+  .tab-content { display: none; padding: 0 24px 24px; }
+  .tab-content.active { display: block; }
+
+  .section-title { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: #6c8aff; margin: 14px 0 8px; padding-top: 10px; border-top: 1px solid rgba(255,255,255,0.05); }
+  .section-title:first-child { border-top: none; padding-top: 0; margin-top: 0; }
+
+  .field { margin-bottom: 10px; }
+  .field label { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #666; margin-bottom: 4px; }
+  .field input[type="range"] { width: 100%; -webkit-appearance: none; appearance: none; height: 4px; background: rgba(255,255,255,0.08); border-radius: 2px; outline: none; }
+  .field input[type="range"]::-webkit-slider-thumb { -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%; background: #6c8aff; cursor: pointer; box-shadow: 0 0 8px rgba(108,138,255,0.4); }
+  .field-value { float: right; font-size: 11px; color: #6c8aff; font-weight: 500; }
+  .field select { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); color: #c8c8d0; font-family: 'JetBrains Mono', monospace; font-size: 11px; padding: 7px 10px; border-radius: 6px; outline: none; cursor: pointer; }
+  .field select:focus { border-color: rgba(108,138,255,0.4); }
+
+  .info-box { background: rgba(108,138,255,0.06); border: 1px solid rgba(108,138,255,0.12); border-radius: 8px; padding: 12px 14px; font-size: 11px; line-height: 1.6; color: #999; margin-top: 12px; }
+  .info-box .formula { font-family: 'Source Serif 4', serif; font-style: italic; color: #b8b8c8; font-size: 13px; display: block; text-align: center; margin: 8px 0; }
+  .info-box strong { color: #b0b0c0; font-weight: 500; }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 10px; }
+  .legend-item { display: flex; align-items: center; gap: 5px; font-size: 10px; color: #888; }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+  .stencil-btns { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0; }
+  .stencil-btn { padding: 6px 10px; font-family: 'JetBrains Mono', monospace; font-size: 10px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08); color: #888; border-radius: 6px; cursor: pointer; transition: all 0.25s; }
+  .stencil-btn:hover { border-color: rgba(108,138,255,0.3); color: #aaa; }
+  .stencil-btn.active { background: rgba(108,138,255,0.12); border-color: #6c8aff; color: #6c8aff; }
+
+  .canvas-area { flex: 1; height: 100vh; position: relative; overflow: hidden; }
+  canvas#main-canvas { display: block; width: 100%; height: 100%; }
+
+  .view-toggle { position: absolute; top: 16px; right: 16px; z-index: 15; display: flex; gap: 0; background: rgba(10,10,20,0.85); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.08); border-radius: 8px; overflow: hidden; }
+  .view-btn { padding: 8px 14px; font-family: 'JetBrains Mono', monospace; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #555; background: none; border: none; cursor: pointer; transition: all 0.25s; display: flex; align-items: center; gap: 5px; }
+  .view-btn:hover { color: #888; }
+  .view-btn.active { color: #6c8aff; background: rgba(108,138,255,0.1); }
+  .view-btn + .view-btn { border-left: 1px solid rgba(255,255,255,0.06); }
+  .view-btn svg { width: 14px; height: 14px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+
+  .drag-hint { position: absolute; bottom: 16px; right: 16px; z-index: 15; font-size: 10px; color: #444; pointer-events: none; transition: opacity 0.5s; }
+
+  .tooltip { position: absolute; background: rgba(10,10,20,0.92); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.1); border-radius: 8px; padding: 8px 12px; font-size: 11px; color: #c8c8d0; pointer-events: none; opacity: 0; transition: opacity 0.15s; z-index: 20; max-width: 240px; line-height: 1.5; }
+  .tooltip.visible { opacity: 1; }
+  .tooltip .tt-label { color: #6c8aff; font-weight: 500; }
+  .tooltip .tt-val { color: #e8e8f0; }
+
+  .checkbox-field { display: flex; align-items: center; gap: 8px; margin: 8px 0; cursor: pointer; font-size: 11px; color: #888; }
+  .checkbox-field input[type="checkbox"] { accent-color: #6c8aff; width: 14px; height: 14px; }
+
+  /* deselect button */
+  .deselect-btn { padding: 5px 10px; font-family: 'JetBrains Mono', monospace; font-size: 9px; text-transform: uppercase; letter-spacing: 1px; background: rgba(248,113,113,0.08); border: 1px solid rgba(248,113,113,0.2); color: #f87171; border-radius: 6px; cursor: pointer; transition: all 0.25s; margin-top: 6px; }
+  .deselect-btn:hover { background: rgba(248,113,113,0.15); border-color: rgba(248,113,113,0.4); }
+
+  /* stencil molecule diagram */
+  .molecule-wrap { margin: 12px 0 8px; }
+  .molecule-label { font-size: 9px; text-transform: uppercase; letter-spacing: 1px; color: #555; margin-bottom: 6px; }
+  #molecule-canvas { width: 100%; height: 180px; border-radius: 8px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); }
+
+  /* stencil results list */
+  .stencil-results { max-height: 260px; overflow-y: auto; margin-top: 8px; }
+  .stencil-results::-webkit-scrollbar { width: 3px; }
+  .stencil-results::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+  .sr-item { background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.05); border-radius: 6px; padding: 8px 10px; margin-bottom: 6px; font-size: 10px; line-height: 1.6; }
+  .sr-item .sr-header { color: #fbbf24; font-weight: 600; margin-bottom: 2px; }
+  .sr-item .sr-row { display: flex; justify-content: space-between; }
+  .sr-item .sr-label { color: #666; }
+  .sr-item .sr-val { color: #b0b0c0; }
+  .sr-item .sr-err { font-weight: 500; }
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div class="sidebar-header">
+    <h1>Finite Differences</h1>
+    <div class="subtitle">Discrete representation & derivative approximation</div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" data-tab="grid">Grid</button>
+    <button class="tab" data-tab="stencils">Stencils</button>
+    <button class="tab" data-tab="accuracy">Accuracy</button>
+  </div>
+
+  <!-- TAB 1: Grid -->
+  <div class="tab-content active" id="tab-grid">
+    <div class="section-title">Domain</div>
+    <div class="field">
+      <label>Function u(x,y) <span class="field-value" id="func-label">sin(πx)·cos(πy)</span></label>
+      <select id="func-select">
+        <option value="sincos">sin(πx)·cos(πy)</option>
+        <option value="gaussian">exp(−(x²+y²))</option>
+        <option value="saddle">x² − y²</option>
+        <option value="ripple">sin(π√(x²+y²))</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>[a, b] interval <span class="field-value" id="ab-val">[-1, 1]</span></label>
+      <input type="range" id="a-slider" min="-3" max="0" step="0.5" value="-1">
+      <input type="range" id="b-slider" min="0" max="3" step="0.5" value="1" style="margin-top:4px;">
+    </div>
+    <div class="field">
+      <label>[c, d] interval <span class="field-value" id="cd-val">[-1, 1]</span></label>
+      <input type="range" id="c-slider" min="-3" max="0" step="0.5" value="-1">
+      <input type="range" id="d-slider" min="0" max="3" step="0.5" value="1" style="margin-top:4px;">
+    </div>
+    <div class="section-title">Grid Resolution</div>
+    <div class="field">
+      <label>N (x-divisions) <span class="field-value" id="n-val">8</span></label>
+      <input type="range" id="n-slider" min="2" max="30" step="1" value="8">
+    </div>
+    <div class="field">
+      <label>K (y-divisions) <span class="field-value" id="k-val">8</span></label>
+      <input type="range" id="k-slider" min="2" max="30" step="1" value="8">
+    </div>
+    <label class="checkbox-field"><input type="checkbox" id="show-heatmap" checked> Show function heatmap (2D)</label>
+    <label class="checkbox-field"><input type="checkbox" id="show-smooth-surface"> Show true u(x,y) surface (3D)</label>
+    <label class="checkbox-field"><input type="checkbox" id="show-surface" checked> Show grid mesh (3D)</label>
+    <label class="checkbox-field"><input type="checkbox" id="show-values"> Show U values on points</label>
+    <div class="info-box">
+      <strong>Δx</strong> = (b−a)/N = <span id="dx-val">0.25</span><br>
+      <strong>Δy</strong> = (d−c)/K = <span id="dy-val">0.25</span><br>
+      <strong>Grid points:</strong> <span id="total-pts">81</span>
+      <span class="formula">U<sub>n,k</sub> = u(a + nΔx, c + kΔy)</span>
+    </div>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:#6c8aff"></div>Interior</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#f472b6"></div>Boundary</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#fbbf24"></div>Selected</div>
+    </div>
+  </div>
+
+  <!-- TAB 2: Stencils -->
+  <div class="tab-content" id="tab-stencils">
+    <div class="section-title">Click points to select · click again to deselect</div>
+    <div class="stencil-btns">
+      <button class="stencil-btn active" data-stencil="forward-x">∂x⁺</button>
+      <button class="stencil-btn" data-stencil="backward-x">∂x⁻</button>
+      <button class="stencil-btn" data-stencil="central-x">∂x</button>
+      <button class="stencil-btn" data-stencil="forward-y">∂y⁺</button>
+      <button class="stencil-btn" data-stencil="backward-y">∂y⁻</button>
+      <button class="stencil-btn" data-stencil="central-y">∂y</button>
+    </div>
+    <div class="stencil-btns">
+      <button class="stencil-btn" data-stencil="second-xx">∂²xx</button>
+      <button class="stencil-btn" data-stencil="second-yy">∂²yy</button>
+      <button class="stencil-btn" data-stencil="second-xy">∂²xy</button>
+      <button class="stencil-btn" data-stencil="laplacian">∇²</button>
+    </div>
+    <button class="deselect-btn" id="deselect-all">Deselect All</button>
+
+    <div class="info-box" id="stencil-info">
+      <strong>Forward difference (x)</strong><br>
+      <span class="formula">(U<sub>n,k</sub>)<sub>x⁺</sub> = (U<sub>n+1,k</sub> − U<sub>n,k</sub>) / Δx</span>
+      Click grid points to see stencils in action.
+    </div>
+
+    <div class="molecule-wrap">
+      <div class="molecule-label">Computational Molecule</div>
+      <canvas id="molecule-canvas" width="280" height="180"></canvas>
+    </div>
+
+    <div class="stencil-results" id="stencil-results"></div>
+
+    <div class="legend" style="margin-top:14px">
+      <div class="legend-item"><div class="legend-dot" style="background:#fbbf24"></div>Center (n,k)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#34d399"></div>+ weight</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#f87171"></div>− weight</div>
+    </div>
+  </div>
+
+  <!-- TAB 3: Accuracy -->
+  <div class="tab-content" id="tab-accuracy">
+    <div class="section-title">Convergence Analysis</div>
+    <p style="font-size:11px; color:#777; margin-bottom:10px; line-height:1.5;">
+      See how the finite difference error decreases as you increase resolution.
+    </p>
+    <div class="field">
+      <label>Derivative type</label>
+      <select id="acc-deriv">
+        <option value="central-x">Central ∂x (2nd order)</option>
+        <option value="forward-x">Forward ∂x (1st order)</option>
+        <option value="second-xx">Central ∂²xx (2nd order)</option>
+        <option value="laplacian">Laplacian ∇² (2nd order)</option>
+      </select>
+    </div>
+    <div class="field">
+      <label>Evaluation point</label>
+      <select id="acc-point">
+        <option value="center">Center of domain</option>
+        <option value="quarter">Quarter point</option>
+      </select>
+    </div>
+    <div class="info-box" id="acc-info">
+      <strong>Central ∂x</strong> is O(Δx²) — second order accurate.<br>
+      Doubling N should reduce the error by ~4×.
+    </div>
+    <canvas id="acc-canvas" width="280" height="200" style="width:100%; height:200px; margin-top:12px; border-radius:8px; background:rgba(255,255,255,0.02);"></canvas>
+  </div>
+</div>
+
+<div class="canvas-area">
+  <canvas id="main-canvas"></canvas>
+  <div class="view-toggle">
+    <button class="view-btn" data-view="above">
+      <svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/></svg>
+      Above
+    </button>
+    <button class="view-btn active" data-view="3d">
+      <svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      3D
+    </button>
+  </div>
+  <div class="drag-hint" id="drag-hint" style="opacity:1;">Drag to rotate · Scroll to zoom</div>
+  <div class="tooltip" id="tooltip"></div>
+</div>
+
+<script>
+// ═══════════ STATE ═══════════
+const state = {
+  a: -1, b: 1, c: -1, d: 1, N: 8, K: 8,
+  func: 'sincos',
+  showHeatmap: true, showValues: false, showSurface: true, showSmoothSurface: false,
+  selectedPoints: [],   // array of {n,k}
+  stencil: 'forward-x',
+  tab: 'grid',
+  hover: null,
+  viewMode: '3d',
+  cam: { rotX: 0.5, rotZ: -0.5, zoom: 1.8 },
+  dragging: false, dragStart: null, dragCamStart: null,
+};
+
+// Helper: is point selected?
+function isPointSelected(n, k) {
+  return state.selectedPoints.some(p => p.n === n && p.k === k);
+}
+function togglePoint(n, k) {
+  const idx = state.selectedPoints.findIndex(p => p.n === n && p.k === k);
+  if (idx >= 0) state.selectedPoints.splice(idx, 1);
+  else state.selectedPoints.push({ n, k });
+}
+
+// ═══════════ FUNCTIONS ═══════════
+const funcs = {
+  sincos: {
+    f: (x,y) => Math.sin(Math.PI*x)*Math.cos(Math.PI*y),
+    fx: (x,y) => Math.PI*Math.cos(Math.PI*x)*Math.cos(Math.PI*y),
+    fy: (x,y) => -Math.PI*Math.sin(Math.PI*x)*Math.sin(Math.PI*y),
+    fxx: (x,y) => -Math.PI*Math.PI*Math.sin(Math.PI*x)*Math.cos(Math.PI*y),
+    fyy: (x,y) => -Math.PI*Math.PI*Math.sin(Math.PI*x)*Math.cos(Math.PI*y),
+    fxy: (x,y) => -Math.PI*Math.PI*Math.cos(Math.PI*x)*Math.sin(Math.PI*y),
+    label: 'sin(πx)·cos(πy)',
+  },
+  gaussian: {
+    f: (x,y) => Math.exp(-(x*x+y*y)),
+    fx: (x,y) => -2*x*Math.exp(-(x*x+y*y)),
+    fy: (x,y) => -2*y*Math.exp(-(x*x+y*y)),
+    fxx: (x,y) => (-2+4*x*x)*Math.exp(-(x*x+y*y)),
+    fyy: (x,y) => (-2+4*y*y)*Math.exp(-(x*x+y*y)),
+    fxy: (x,y) => 4*x*y*Math.exp(-(x*x+y*y)),
+    label: 'exp(−(x²+y²))',
+  },
+  saddle: {
+    f: (x,y) => x*x-y*y, fx: (x,y) => 2*x, fy: (x,y) => -2*y,
+    fxx: () => 2, fyy: () => -2, fxy: () => 0, label: 'x² − y²',
+  },
+  ripple: {
+    f: (x,y) => { const r=Math.sqrt(x*x+y*y); return r<0.001?0:Math.sin(Math.PI*r); },
+    fx: (x,y) => { const r=Math.sqrt(x*x+y*y); if(r<0.001)return 0; return Math.PI*Math.cos(Math.PI*r)*x/r; },
+    fy: (x,y) => { const r=Math.sqrt(x*x+y*y); if(r<0.001)return 0; return Math.PI*Math.cos(Math.PI*r)*y/r; },
+    fxx: (x,y) => { const r=Math.sqrt(x*x+y*y); if(r<0.001)return 0; const c=Math.cos(Math.PI*r),s=Math.sin(Math.PI*r); return Math.PI*(c*(r*r-x*x)/(r*r*r)-Math.PI*s*x*x/(r*r)); },
+    fyy: (x,y) => { const r=Math.sqrt(x*x+y*y); if(r<0.001)return 0; const c=Math.cos(Math.PI*r),s=Math.sin(Math.PI*r); return Math.PI*(c*(r*r-y*y)/(r*r*r)-Math.PI*s*y*y/(r*r)); },
+    fxy: (x,y) => { const r=Math.sqrt(x*x+y*y); if(r<0.001)return 0; const c=Math.cos(Math.PI*r),s=Math.sin(Math.PI*r); return -Math.PI*x*y*(c/(r*r*r)+Math.PI*s/(r*r)); },
+    label: 'sin(π√(x²+y²))',
+  },
+};
+
+// ═══════════ STENCIL DEFINITIONS ═══════════
+const stencils = {
+  'forward-x':  { name:'Forward ∂x⁺', formula:'(U<sub>n+1,k</sub> − U<sub>n,k</sub>) / Δx', order:1, points:()=>[{dn:1,dk:0,w:1},{dn:0,dk:0,w:-1}], div:s=>s.dx, exact:'fx' },
+  'backward-x': { name:'Backward ∂x⁻', formula:'(U<sub>n,k</sub> − U<sub>n−1,k</sub>) / Δx', order:1, points:()=>[{dn:0,dk:0,w:1},{dn:-1,dk:0,w:-1}], div:s=>s.dx, exact:'fx' },
+  'central-x':  { name:'Central ∂x', formula:'(U<sub>n+1,k</sub> − U<sub>n−1,k</sub>) / 2Δx', order:2, points:()=>[{dn:1,dk:0,w:1},{dn:-1,dk:0,w:-1}], div:s=>2*s.dx, exact:'fx' },
+  'forward-y':  { name:'Forward ∂y⁺', formula:'(U<sub>n,k+1</sub> − U<sub>n,k</sub>) / Δy', order:1, points:()=>[{dn:0,dk:1,w:1},{dn:0,dk:0,w:-1}], div:s=>s.dy, exact:'fy' },
+  'backward-y': { name:'Backward ∂y⁻', formula:'(U<sub>n,k</sub> − U<sub>n,k−1</sub>) / Δy', order:1, points:()=>[{dn:0,dk:0,w:1},{dn:0,dk:-1,w:-1}], div:s=>s.dy, exact:'fy' },
+  'central-y':  { name:'Central ∂y', formula:'(U<sub>n,k+1</sub> − U<sub>n,k−1</sub>) / 2Δy', order:2, points:()=>[{dn:0,dk:1,w:1},{dn:0,dk:-1,w:-1}], div:s=>2*s.dy, exact:'fy' },
+  'second-xx':  { name:'∂²xx', formula:'(U<sub>n+1,k</sub> − 2U<sub>n,k</sub> + U<sub>n−1,k</sub>) / Δx²', order:2, points:()=>[{dn:1,dk:0,w:1},{dn:0,dk:0,w:-2},{dn:-1,dk:0,w:1}], div:s=>s.dx*s.dx, exact:'fxx' },
+  'second-yy':  { name:'∂²yy', formula:'(U<sub>n,k+1</sub> − 2U<sub>n,k</sub> + U<sub>n,k−1</sub>) / Δy²', order:2, points:()=>[{dn:0,dk:1,w:1},{dn:0,dk:0,w:-2},{dn:0,dk:-1,w:1}], div:s=>s.dy*s.dy, exact:'fyy' },
+  'second-xy':  { name:'∂²xy', formula:'(U<sub>n+1,k+1</sub> − U<sub>n+1,k−1</sub> − U<sub>n−1,k+1</sub> + U<sub>n−1,k−1</sub>) / 4ΔxΔy', order:2, points:()=>[{dn:1,dk:1,w:1},{dn:1,dk:-1,w:-1},{dn:-1,dk:1,w:-1},{dn:-1,dk:-1,w:1}], div:s=>4*s.dx*s.dy, exact:'fxy' },
+  'laplacian':  { name:'∇²', formula:'(U<sub>xx</sub> + U<sub>yy</sub>)', order:2, points:()=>[{dn:1,dk:0,w:1},{dn:-1,dk:0,w:1},{dn:0,dk:1,w:1},{dn:0,dk:-1,w:1},{dn:0,dk:0,w:-4}], div:s=>s.dx*s.dx, exact:'lap', custom:true },
+};
+
+// ═══════════ CANVAS ═══════════
+const canvas = document.getElementById('main-canvas');
+const ctx = canvas.getContext('2d');
+const tooltip = document.getElementById('tooltip');
+let W, H;
+
+function resize() {
+  const area = canvas.parentElement;
+  canvas.width = area.clientWidth * devicePixelRatio;
+  canvas.height = area.clientHeight * devicePixelRatio;
+  ctx.setTransform(devicePixelRatio,0,0,devicePixelRatio,0,0);
+  W = area.clientWidth; H = area.clientHeight;
+  render();
+}
+window.addEventListener('resize', resize);
+
+function render() { state.viewMode === 'above' ? draw2D() : draw3D(); }
+
+// ╔═══════════════════════════════════════╗
+// ║         2D "ABOVE" VIEW               ║
+// ╚═══════════════════════════════════════╝
+function getGridMetrics() {
+  const pad=60, dx=(state.b-state.a)/state.N, dy=(state.d-state.c)/state.K;
+  const plotW=W-2*pad, plotH=H-2*pad;
+  return { w:W, h:H, pad, dx, dy, plotW, plotH, scaleX:plotW/(state.b-state.a), scaleY:plotH/(state.d-state.c) };
+}
+function gridToPixel(n,k,m) { return { x:m.pad+n*m.dx*m.scaleX, y:m.h-m.pad-k*m.dy*m.scaleY }; }
+function pixelToGrid(px,py,m) {
+  const n=Math.round((px-m.pad)/m.scaleX/m.dx), k=Math.round((m.h-m.pad-py)/m.scaleY/m.dy);
+  if(n>=0&&n<=state.N&&k>=0&&k<=state.K) { const gp=gridToPixel(n,k,m); if(Math.sqrt((px-gp.x)**2+(py-gp.y)**2)<15) return {n,k}; }
+  return null;
+}
+function hslForValue(v,vmin,vmax) { if(vmax===vmin)return'hsl(220,50%,30%)'; return`hsl(${240-(v-vmin)/(vmax-vmin)*240},65%,45%)`; }
+
+function draw2D() {
+  const m=getGridMetrics(), fn=funcs[state.func];
+  ctx.clearRect(0,0,W,H);
+
+  if(state.showHeatmap) {
+    const res=2; let vmin=Infinity,vmax=-Infinity;
+    for(let py=m.pad;py<m.h-m.pad;py+=res) for(let px=m.pad;px<m.w-m.pad;px+=res) { const v=fn.f(state.a+(px-m.pad)/m.scaleX,state.d-(py-m.pad)/m.scaleY); if(v<vmin)vmin=v;if(v>vmax)vmax=v; }
+    for(let py=m.pad;py<m.h-m.pad;py+=res) for(let px=m.pad;px<m.w-m.pad;px+=res) { ctx.fillStyle=hslForValue(fn.f(state.a+(px-m.pad)/m.scaleX,state.d-(py-m.pad)/m.scaleY),vmin,vmax); ctx.globalAlpha=0.25; ctx.fillRect(px,py,res,res); }
+    ctx.globalAlpha=1;
+  }
+
+  ctx.strokeStyle='rgba(255,255,255,0.06)';ctx.lineWidth=0.5;
+  for(let n=0;n<=state.N;n++){const p0=gridToPixel(n,0,m),p1=gridToPixel(n,state.K,m);ctx.beginPath();ctx.moveTo(p0.x,p0.y);ctx.lineTo(p1.x,p1.y);ctx.stroke();}
+  for(let k=0;k<=state.K;k++){const p0=gridToPixel(0,k,m),p1=gridToPixel(state.N,k,m);ctx.beginPath();ctx.moveTo(p0.x,p0.y);ctx.lineTo(p1.x,p1.y);ctx.stroke();}
+
+  ctx.fillStyle='#555';ctx.font='10px JetBrains Mono';ctx.textAlign='center';
+  const xStep=Math.max(1,Math.floor(state.N/8));
+  for(let n=0;n<=state.N;n+=xStep){const p=gridToPixel(n,0,m);ctx.fillText((state.a+n*m.dx).toFixed(1),p.x,p.y+16);}
+  {const p=gridToPixel(state.N,0,m);ctx.fillText(state.b.toFixed(1),p.x,p.y+16);}
+  ctx.textAlign='right';const yStep=Math.max(1,Math.floor(state.K/8));
+  for(let k=0;k<=state.K;k+=yStep){const p=gridToPixel(0,k,m);ctx.fillText((state.c+k*m.dy).toFixed(1),p.x-8,p.y+4);}
+  ctx.fillStyle='#666';ctx.font='11px Source Serif 4, serif';ctx.textAlign='center';
+  ctx.fillText('x',m.pad+m.plotW/2,m.h-m.pad+40);
+  ctx.save();ctx.translate(m.pad-40,m.pad+m.plotH/2);ctx.rotate(-Math.PI/2);ctx.fillText('y',0,0);ctx.restore();
+
+  // Stencil highlights for ALL selected points
+  if(state.tab==='stencils') state.selectedPoints.forEach(sp => drawStencilHighlights2D(m, sp));
+
+  // Grid points
+  for(let n=0;n<=state.N;n++) for(let k=0;k<=state.K;k++) {
+    const p=gridToPixel(n,k,m);
+    const isBoundary=n===0||n===state.N||k===0||k===state.K;
+    const isSel=isPointSelected(n,k);
+    const isHover=state.hover&&state.hover.n===n&&state.hover.k===k;
+    let r=3,color=isBoundary?'#f472b6':'#6c8aff';
+    if(isSel){color='#fbbf24';r=5;}else if(isHover)r=4.5;
+    ctx.beginPath();ctx.arc(p.x,p.y,r,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();
+    if(isSel||isHover){ctx.beginPath();ctx.arc(p.x,p.y,r+4,0,Math.PI*2);ctx.strokeStyle=color;ctx.globalAlpha=0.3;ctx.lineWidth=1.5;ctx.stroke();ctx.globalAlpha=1;}
+    if(state.showValues&&state.N<=12&&state.K<=12){ctx.fillStyle='rgba(200,200,220,0.6)';ctx.font='8px JetBrains Mono';ctx.textAlign='center';ctx.fillText(fn.f(state.a+n*m.dx,state.c+k*m.dy).toFixed(2),p.x,p.y-8);}
+  }
+
+  // Index labels for selected
+  state.selectedPoints.forEach(sp => {
+    const p=gridToPixel(sp.n,sp.k,m);
+    ctx.fillStyle='#fbbf24';ctx.font='600 11px JetBrains Mono';ctx.textAlign='center';
+    ctx.fillText(`(${sp.n},${sp.k})`,p.x,p.y-12);
+  });
+}
+
+function drawArrow(ctx, x1, y1, x2, y2, color, lineW) {
+  const dx = x2 - x1, dy = y2 - y1, len = Math.sqrt(dx*dx + dy*dy);
+  if (len < 1) return;
+  const ux = dx/len, uy = dy/len;
+  const aLen = 10, aW = 5;
+  // Shorten to not overlap circles
+  const sx = x1 + ux * 8, sy = y1 + uy * 8;
+  const ex = x2 - ux * 8, ey = y2 - uy * 8;
+  ctx.beginPath(); ctx.moveTo(sx, sy); ctx.lineTo(ex, ey);
+  ctx.strokeStyle = color; ctx.lineWidth = lineW; ctx.stroke();
+  // Arrowhead
+  ctx.beginPath();
+  ctx.moveTo(ex, ey);
+  ctx.lineTo(ex - ux*aLen + uy*aW, ey - uy*aLen - ux*aW);
+  ctx.lineTo(ex - ux*aLen - uy*aW, ey - uy*aLen + ux*aW);
+  ctx.closePath();
+  ctx.fillStyle = color; ctx.fill();
+}
+
+function drawStencilHighlights2D(m, sp) {
+  const st=stencils[state.stencil]; if(!st)return;
+  const pts=st.points(), center=gridToPixel(sp.n,sp.k,m);
+  const fn=funcs[state.func];
+  const dx=(state.b-state.a)/state.N, dy=(state.d-state.c)/state.K;
+  const isCentral = state.stencil.startsWith('central-');
+
+  // For central differences: draw a spanning "big difference" line first (behind everything)
+  if (isCentral) {
+    const posP = pts.find(p => (p.dn > 0 || p.dk > 0) && p.w !== 0);
+    const negP = pts.find(p => (p.dn < 0 || p.dk < 0) && p.w !== 0);
+    if (posP && negP) {
+      const n1=sp.n+negP.dn, k1=sp.k+negP.dk, n2=sp.n+posP.dn, k2=sp.k+posP.dk;
+      if (n1>=0&&n1<=state.N&&k1>=0&&k1<=state.K&&n2>=0&&n2<=state.N&&k2>=0&&k2<=state.K) {
+        const p1=gridToPixel(n1,k1,m), p2=gridToPixel(n2,k2,m);
+        // Thick opaque spanning line
+        ctx.beginPath(); ctx.moveTo(p1.x,p1.y); ctx.lineTo(p2.x,p2.y);
+        ctx.strokeStyle='rgba(168,140,255,0.5)'; ctx.lineWidth=4; ctx.stroke();
+        // Difference value on spanning line
+        const v1=fn.f(state.a+n1*dx, state.c+k1*dy), v2=fn.f(state.a+n2*dx, state.c+k2*dy);
+        const spanDiff = v2 - v1;
+        const mx2=(p1.x+p2.x)/2, my2=(p1.y+p2.y)/2;
+        // Perpendicular offset for label
+        const ldx=p2.x-p1.x, ldy=p2.y-p1.y, llen=Math.sqrt(ldx*ldx+ldy*ldy)||1;
+        const perpX=-ldy/llen*18, perpY=ldx/llen*18;
+        ctx.fillStyle='rgba(168,140,255,0.85)'; ctx.font='600 10px JetBrains Mono'; ctx.textAlign='center'; ctx.textBaseline='middle';
+        ctx.fillText('Δ='+spanDiff.toFixed(3), mx2+perpX, my2+perpY);
+        ctx.textBaseline='alphabetic';
+      }
+    }
+  }
+
+  // Arrows from center to each stencil point + difference values
+  pts.forEach(pt => {
+    const n2=sp.n+pt.dn,k2=sp.k+pt.dk;
+    if(n2<0||n2>state.N||k2<0||k2>state.K||(!pt.dn&&!pt.dk))return;
+    const p2=gridToPixel(n2,k2,m);
+    const color=pt.w>0?'rgba(52,211,153,0.7)':'rgba(248,113,113,0.7)';
+    drawArrow(ctx, center.x, center.y, p2.x, p2.y, color, 2);
+
+    // Difference value at midpoint of arrow
+    const vCenter=fn.f(state.a+sp.n*dx, state.c+sp.k*dy);
+    const vTarget=fn.f(state.a+n2*dx, state.c+k2*dy);
+    const diff=vTarget-vCenter;
+    const mx2=(center.x+p2.x)/2, my2=(center.y+p2.y)/2;
+    // Perpendicular offset so text doesn't overlap the arrow
+    const ldx=p2.x-center.x, ldy=p2.y-center.y, llen=Math.sqrt(ldx*ldx+ldy*ldy)||1;
+    const perpX=-ldy/llen*14, perpY=ldx/llen*14;
+    ctx.fillStyle='rgba(200,200,220,0.85)'; ctx.font='600 10px JetBrains Mono'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(diff>=0?'+'+diff.toFixed(3):diff.toFixed(3), mx2+perpX, my2+perpY);
+    ctx.textBaseline='alphabetic';
+  });
+
+  // Points with scaled radii
+  pts.forEach(pt => {
+    const n2=sp.n+pt.dn,k2=sp.k+pt.dk;
+    if(n2<0||n2>state.N||k2<0||k2>state.K)return;
+    const p2=gridToPixel(n2,k2,m);
+    const isC=!pt.dn&&!pt.dk, color=isC?'#fbbf24':(pt.w>0?'#34d399':'#f87171');
+    const r=isC?7:(4+Math.min(Math.abs(pt.w),4)*1.5);
+    const grad=ctx.createRadialGradient(p2.x,p2.y,r,p2.x,p2.y,r+8);
+    grad.addColorStop(0,color+'33');grad.addColorStop(1,'transparent');
+    ctx.beginPath();ctx.arc(p2.x,p2.y,r+8,0,Math.PI*2);ctx.fillStyle=grad;ctx.fill();
+    ctx.beginPath();ctx.arc(p2.x,p2.y,r,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();
+    // Weight inside circle
+    const wStr=pt.w===1?'+1':pt.w===-1?'−1':pt.w===-2?'−2':pt.w===-4?'−4':String(pt.w);
+    ctx.fillStyle=isC?'#000':'#fff'; ctx.font='600 9px JetBrains Mono'; ctx.textAlign='center'; ctx.textBaseline='middle';
+    ctx.fillText(wStr,p2.x,p2.y);
+    ctx.textBaseline='alphabetic';
+  });
+}
+
+// ╔═══════════════════════════════════════╗
+// ║            3D VIEW                     ║
+// ╚═══════════════════════════════════════╝
+function project3D(x,y,z) {
+  const {rotX,rotZ,zoom}=state.cam;
+  const cosZ=Math.cos(rotZ),sinZ=Math.sin(rotZ),cosX=Math.cos(rotX),sinX=Math.sin(rotX);
+  let rx=x*cosZ-y*sinZ, ry=x*sinZ+y*cosZ, rz=z;
+  let ry2=ry*cosX-rz*sinX, rz2=ry*sinX+rz*cosX;
+  const dist=4.0/zoom, scale=dist/(dist+ry2+2);
+  return { x:W/2+rx*scale*W*0.28, y:H/2-rz2*scale*H*0.28, depth:ry2 };
+}
+
+function draw3D() {
+  const fn=funcs[state.func];
+  ctx.clearRect(0,0,W,H);
+  const dx=(state.b-state.a)/state.N, dy=(state.d-state.c)/state.K;
+  const midX=(state.a+state.b)/2, midY=(state.c+state.d)/2;
+  const rangeX=state.b-state.a, rangeY=state.d-state.c, scaleXY=Math.max(rangeX,rangeY);
+
+  const SMOOTH_RES=40, sDx=rangeX/SMOOTH_RES, sDy=rangeY/SMOOTH_RES;
+  let vmin=Infinity,vmax=-Infinity;
+  for(let i=0;i<=SMOOTH_RES;i++)for(let j=0;j<=SMOOTH_RES;j++){const v=fn.f(state.a+i*sDx,state.c+j*sDy);if(v<vmin)vmin=v;if(v>vmax)vmax=v;}
+  const vRange=vmax-vmin||1, vMid=(vmax+vmin)/2;
+
+  function toNorm(n,k,el){const xw=state.a+n*dx,yw=state.c+k*dy,nx=(xw-midX)/scaleXY*2,ny=(yw-midY)/scaleXY*2;let nz=0,v=0;if(el){v=fn.f(xw,yw);nz=(v-vMid)/vRange*1.2;}return{nx,ny,nz,xw,yw,v};}
+  function wToNorm(xw,yw,el){const nx=(xw-midX)/scaleXY*2,ny=(yw-midY)/scaleXY*2;let nz=0,v=0;if(el){v=fn.f(xw,yw);nz=(v-vMid)/vRange*1.2;}return{nx,ny,nz,v};}
+
+  // base grid
+  ctx.strokeStyle='rgba(255,255,255,0.04)';ctx.lineWidth=0.5;
+  for(let n=0;n<=state.N;n++){const a=toNorm(n,0,false),b=toNorm(n,state.K,false);const pa=project3D(a.nx,a.ny,-0.6),pb=project3D(b.nx,b.ny,-0.6);ctx.beginPath();ctx.moveTo(pa.x,pa.y);ctx.lineTo(pb.x,pb.y);ctx.stroke();}
+  for(let k=0;k<=state.K;k++){const a=toNorm(0,k,false),b=toNorm(state.N,k,false);const pa=project3D(a.nx,a.ny,-0.6),pb=project3D(b.nx,b.ny,-0.6);ctx.beginPath();ctx.moveTo(pa.x,pa.y);ctx.lineTo(pb.x,pb.y);ctx.stroke();}
+
+  // smooth surface
+  if(state.showSmoothSurface){const q=[];for(let i=0;i<SMOOTH_RES;i++)for(let j=0;j<SMOOTH_RES;j++){const c00=wToNorm(state.a+i*sDx,state.c+j*sDy,true),c10=wToNorm(state.a+(i+1)*sDx,state.c+j*sDy,true),c11=wToNorm(state.a+(i+1)*sDx,state.c+(j+1)*sDy,true),c01=wToNorm(state.a+i*sDx,state.c+(j+1)*sDy,true);const p00=project3D(c00.nx,c00.ny,c00.nz),p10=project3D(c10.nx,c10.ny,c10.nz),p11=project3D(c11.nx,c11.ny,c11.nz),p01=project3D(c01.nx,c01.ny,c01.nz);q.push({p:[p00,p10,p11,p01],depth:(p00.depth+p10.depth+p11.depth+p01.depth)/4,val:(c00.v+c10.v+c11.v+c01.v)/4});}
+  q.sort((a,b)=>b.depth-a.depth);q.forEach(q=>{const t=(q.val-vmin)/vRange,hue=240-t*240;ctx.beginPath();ctx.moveTo(q.p[0].x,q.p[0].y);for(let i=1;i<4;i++)ctx.lineTo(q.p[i].x,q.p[i].y);ctx.closePath();ctx.fillStyle=`hsla(${hue},55%,50%,0.22)`;ctx.fill();ctx.strokeStyle=`hsla(${hue},50%,60%,0.1)`;ctx.lineWidth=0.3;ctx.stroke();});}
+
+  // grid mesh
+  if(state.showSurface){const q=[];for(let n=0;n<state.N;n++)for(let k=0;k<state.K;k++){const c00=toNorm(n,k,true),c10=toNorm(n+1,k,true),c11=toNorm(n+1,k+1,true),c01=toNorm(n,k+1,true);const p00=project3D(c00.nx,c00.ny,c00.nz),p10=project3D(c10.nx,c10.ny,c10.nz),p11=project3D(c11.nx,c11.ny,c11.nz),p01=project3D(c01.nx,c01.ny,c01.nz);q.push({p:[p00,p10,p11,p01],depth:(p00.depth+p10.depth+p11.depth+p01.depth)/4,val:(c00.v+c10.v+c11.v+c01.v)/4});}
+  q.sort((a,b)=>b.depth-a.depth);q.forEach(q=>{const t=(q.val-vmin)/vRange,hue=240-t*240;ctx.beginPath();ctx.moveTo(q.p[0].x,q.p[0].y);for(let i=1;i<4;i++)ctx.lineTo(q.p[i].x,q.p[i].y);ctx.closePath();ctx.fillStyle=`hsla(${hue},65%,45%,0.35)`;ctx.fill();ctx.strokeStyle=`hsla(${hue},60%,55%,0.4)`;ctx.lineWidth=0.8;ctx.stroke();});}
+
+  // Build stencil set for ALL selected points
+  const stencilMap = new Map(); // key -> { color, w, centerN, centerK }
+  let allStencilPts = [];
+  if(state.tab==='stencils') {
+    const st=stencils[state.stencil];
+    if(st) {
+      const pts=st.points();
+      state.selectedPoints.forEach(sp => {
+        pts.forEach(pt => {
+          const sn=sp.n+pt.dn, sk=sp.k+pt.dk;
+          if(sn>=0&&sn<=state.N&&sk>=0&&sk<=state.K)
+            stencilMap.set(`${sn},${sk}`, { w:pt.w, dn:pt.dn, dk:pt.dk, centerN:sp.n, centerK:sp.k });
+        });
+      });
+      const isCentral3D = state.stencil.startsWith('central-');
+      // stencil connections (arrows) + difference values
+      state.selectedPoints.forEach(sp => {
+        const cN=toNorm(sp.n,sp.k,true), cP=project3D(cN.nx,cN.ny,cN.nz);
+        const vCenter=fn.f(state.a+sp.n*dx, state.c+sp.k*dy);
+
+        // Central difference: spanning line first (behind arrows)
+        if (isCentral3D) {
+          const posP=pts.find(p=>(p.dn>0||p.dk>0)&&p.w!==0);
+          const negP=pts.find(p=>(p.dn<0||p.dk<0)&&p.w!==0);
+          if(posP&&negP){
+            const n1=sp.n+negP.dn,k1=sp.k+negP.dk,n2=sp.n+posP.dn,k2=sp.k+posP.dk;
+            if(n1>=0&&n1<=state.N&&k1>=0&&k1<=state.K&&n2>=0&&n2<=state.N&&k2>=0&&k2<=state.K){
+              const t1=toNorm(n1,k1,true),t2=toNorm(n2,k2,true);
+              const p1=project3D(t1.nx,t1.ny,t1.nz),p2=project3D(t2.nx,t2.ny,t2.nz);
+              ctx.beginPath();ctx.moveTo(p1.x,p1.y);ctx.lineTo(p2.x,p2.y);
+              ctx.strokeStyle='rgba(168,140,255,0.5)';ctx.lineWidth=4;ctx.stroke();
+              const v1=fn.f(state.a+n1*dx,state.c+k1*dy),v2=fn.f(state.a+n2*dx,state.c+k2*dy);
+              const spanDiff=v2-v1;
+              const smx=(p1.x+p2.x)/2,smy=(p1.y+p2.y)/2;
+              const sdx=p2.x-p1.x,sdy=p2.y-p1.y,slen=Math.sqrt(sdx*sdx+sdy*sdy)||1;
+              ctx.fillStyle='rgba(168,140,255,0.85)';ctx.font='600 10px JetBrains Mono';ctx.textAlign='center';ctx.textBaseline='middle';
+              ctx.fillText('Δ='+spanDiff.toFixed(3),smx+(-sdy/slen)*16,smy+(sdx/slen)*16);
+              ctx.textBaseline='alphabetic';
+            }
+          }
+        }
+
+        pts.forEach(pt => {
+          const n2=sp.n+pt.dn,k2=sp.k+pt.dk;
+          if(n2<0||n2>state.N||k2<0||k2>state.K||(!pt.dn&&!pt.dk))return;
+          const tN=toNorm(n2,k2,true),tP=project3D(tN.nx,tN.ny,tN.nz);
+          const color=pt.w>0?'rgba(52,211,153,0.7)':'rgba(248,113,113,0.7)';
+          drawArrow(ctx, cP.x, cP.y, tP.x, tP.y, color, 2);
+          // Difference value at midpoint
+          const vTarget=fn.f(state.a+n2*dx,state.c+k2*dy);
+          const diff=vTarget-vCenter;
+          const mmx=(cP.x+tP.x)/2,mmy=(cP.y+tP.y)/2;
+          const ldx=tP.x-cP.x,ldy=tP.y-cP.y,llen=Math.sqrt(ldx*ldx+ldy*ldy)||1;
+          ctx.fillStyle='rgba(200,200,220,0.85)';ctx.font='600 10px JetBrains Mono';ctx.textAlign='center';ctx.textBaseline='middle';
+          ctx.fillText(diff>=0?'+'+diff.toFixed(3):diff.toFixed(3),mmx+(-ldy/llen)*14,mmy+(ldx/llen)*14);
+          ctx.textBaseline='alphabetic';
+        });
+      });
+    }
+  }
+
+  // points sorted by depth
+  const pts3D=[];
+  for(let n=0;n<=state.N;n++)for(let k=0;k<=state.K;k++){const nm=toNorm(n,k,true),pj=project3D(nm.nx,nm.ny,nm.nz),bp=project3D(nm.nx,nm.ny,-0.6);pts3D.push({n,k,proj:pj,baseProj:bp,val:nm.v});}
+  pts3D.sort((a,b)=>b.proj.depth-a.proj.depth);
+
+  const st=stencils[state.stencil], stPts=st?st.points():[];
+
+  pts3D.forEach(({n,k,proj,baseProj,val})=>{
+    const isBoundary=n===0||n===state.N||k===0||k===state.K;
+    const isSel=isPointSelected(n,k);
+    const key=`${n},${k}`, inStencil=stencilMap.has(key);
+
+    ctx.beginPath();ctx.moveTo(baseProj.x,baseProj.y);ctx.lineTo(proj.x,proj.y);
+    ctx.strokeStyle='rgba(255,255,255,0.06)';ctx.lineWidth=0.5;ctx.stroke();
+
+    let r=3,color=isBoundary?'#f472b6':'#6c8aff';
+    if(isSel){color='#fbbf24';r=6;}
+
+    if(inStencil&&state.tab==='stencils'){
+      const info=stencilMap.get(key);
+      const isC=!info.dn&&!info.dk;
+      color=isC?'#fbbf24':(info.w>0?'#34d399':'#f87171');
+      r=isC?6:5;
+    }
+
+    if(isSel||inStencil){const g=ctx.createRadialGradient(proj.x,proj.y,r,proj.x,proj.y,r+10);g.addColorStop(0,color+'44');g.addColorStop(1,'transparent');ctx.beginPath();ctx.arc(proj.x,proj.y,r+10,0,Math.PI*2);ctx.fillStyle=g;ctx.fill();}
+
+    ctx.beginPath();ctx.arc(proj.x,proj.y,r,0,Math.PI*2);ctx.fillStyle=color;ctx.fill();
+
+    if(state.showValues&&state.N<=12&&state.K<=12){ctx.fillStyle='rgba(200,200,220,0.7)';ctx.font='8px JetBrains Mono';ctx.textAlign='center';ctx.fillText(val.toFixed(2),proj.x,proj.y-8);}
+
+    if(inStencil&&state.tab==='stencils'){
+      const info=stencilMap.get(key);
+      const wStr=info.w===1?'+1':info.w===-1?'−1':info.w===-2?'−2':info.w===-4?'−4':String(info.w);
+      const isC=!info.dn&&!info.dk;
+      ctx.fillStyle=isC?'#000':'#fff'; ctx.font='600 9px JetBrains Mono'; ctx.textAlign='center'; ctx.textBaseline='middle';
+      ctx.fillText(wStr,proj.x,proj.y);
+      ctx.textBaseline='alphabetic';
+    }
+  });
+
+  // axes
+  const axes=[{dir:[1,0,0],label:'x',color:'#f87171'},{dir:[0,1,0],label:'y',color:'#34d399'},{dir:[0,0,1],label:'u',color:'#6c8aff'}];
+  const origin=project3D(-1.2,-1.2,-0.6);
+  axes.forEach(ax=>{const end=project3D(-1.2+ax.dir[0]*0.4,-1.2+ax.dir[1]*0.4,-0.6+ax.dir[2]*0.4);ctx.beginPath();ctx.moveTo(origin.x,origin.y);ctx.lineTo(end.x,end.y);ctx.strokeStyle=ax.color;ctx.lineWidth=1.5;ctx.stroke();const ddx=end.x-origin.x,ddy=end.y-origin.y,len=Math.sqrt(ddx*ddx+ddy*ddy);if(len>5){const ux=ddx/len,uy=ddy/len;ctx.beginPath();ctx.moveTo(end.x,end.y);ctx.lineTo(end.x-ux*6+uy*3,end.y-uy*6-ux*3);ctx.lineTo(end.x-ux*6-uy*3,end.y-uy*6+ux*3);ctx.closePath();ctx.fillStyle=ax.color;ctx.fill();}ctx.fillStyle=ax.color;ctx.font='600 11px JetBrains Mono';ctx.textAlign='center';ctx.fillText(ax.label,end.x+(ax.dir[0]?10:0),end.y+(ax.dir[2]?-8:10));});
+}
+
+// ╔═══════════════════════════════════════╗
+// ║      STENCIL MOLECULE DIAGRAM         ║
+// ╚═══════════════════════════════════════╝
+function drawMolecule() {
+  const mc = document.getElementById('molecule-canvas');
+  const mx = mc.getContext('2d');
+  const dpr = devicePixelRatio;
+  mc.width = mc.clientWidth * dpr;
+  mc.height = mc.clientHeight * dpr;
+  mx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const mW = mc.clientWidth, mH = mc.clientHeight;
+  mx.clearRect(0, 0, mW, mH);
+
+  const st = stencils[state.stencil];
+  if (!st) return;
+  const pts = st.points();
+
+  // Determine grid bounds needed
+  let minDn = 0, maxDn = 0, minDk = 0, maxDk = 0;
+  pts.forEach(p => {
+    if (p.dn < minDn) minDn = p.dn;
+    if (p.dn > maxDn) maxDn = p.dn;
+    if (p.dk < minDk) minDk = p.dk;
+    if (p.dk > maxDk) maxDk = p.dk;
+  });
+  // Ensure at least a 3x3 view
+  minDn = Math.min(minDn, -1); maxDn = Math.max(maxDn, 1);
+  minDk = Math.min(minDk, -1); maxDk = Math.max(maxDk, 1);
+
+  const cols = maxDn - minDn + 1, rows = maxDk - minDk + 1;
+  const padL = 20, padR = 20, padT = 16, padB = 30;
+  const cellW = (mW - padL - padR) / cols;
+  const cellH = (mH - padT - padB) / rows;
+  const cell = Math.min(cellW, cellH, 40);
+  const gridW = cols * cell, gridH = rows * cell;
+  const ox = (mW - gridW) / 2, oy = (mH - padB - gridH) / 2 + padT / 2;
+
+  function dndk2xy(dn, dk) {
+    return {
+      x: ox + (dn - minDn + 0.5) * cell,
+      y: oy + (maxDk - dk + 0.5) * cell  // flip y so +k is up
+    };
+  }
+
+  // Draw faint background grid
+  mx.strokeStyle = 'rgba(255,255,255,0.06)';
+  mx.lineWidth = 0.5;
+  for (let c = 0; c <= cols; c++) {
+    mx.beginPath(); mx.moveTo(ox + c * cell, oy); mx.lineTo(ox + c * cell, oy + gridH); mx.stroke();
+  }
+  for (let r = 0; r <= rows; r++) {
+    mx.beginPath(); mx.moveTo(ox, oy + r * cell); mx.lineTo(ox + gridW, oy + r * cell); mx.stroke();
+  }
+
+  // Draw faint dots at all grid intersections
+  for (let dn = minDn; dn <= maxDn; dn++) {
+    for (let dk = minDk; dk <= maxDk; dk++) {
+      const { x, y } = dndk2xy(dn, dk);
+      mx.beginPath(); mx.arc(x, y, 2, 0, Math.PI * 2);
+      mx.fillStyle = 'rgba(255,255,255,0.1)';
+      mx.fill();
+    }
+  }
+
+  // Central difference: spanning line behind arrows
+  const isCentralMol = state.stencil.startsWith('central-');
+  if (isCentralMol) {
+    const posP = pts.find(p => (p.dn > 0 || p.dk > 0) && p.w !== 0);
+    const negP = pts.find(p => (p.dn < 0 || p.dk < 0) && p.w !== 0);
+    if (posP && negP) {
+      const p1 = dndk2xy(negP.dn, negP.dk), p2 = dndk2xy(posP.dn, posP.dk);
+      mx.beginPath(); mx.moveTo(p1.x, p1.y); mx.lineTo(p2.x, p2.y);
+      mx.strokeStyle = 'rgba(168,140,255,0.45)'; mx.lineWidth = 5; mx.stroke();
+      // Label
+      mx.fillStyle = 'rgba(168,140,255,0.8)'; mx.font = '600 8px JetBrains Mono';
+      mx.textAlign = 'center'; mx.textBaseline = 'middle';
+      const smx = (p1.x+p2.x)/2, smy = (p1.y+p2.y)/2;
+      const sdx = p2.x-p1.x, sdy = p2.y-p1.y, slen = Math.sqrt(sdx*sdx+sdy*sdy)||1;
+      mx.fillText('full span', smx + (-sdy/slen)*12, smy + (sdx/slen)*12);
+      mx.textBaseline = 'alphabetic';
+    }
+  }
+
+  // Draw arrows from center to each stencil point (skip center itself)
+  const center = dndk2xy(0, 0);
+  pts.forEach(pt => {
+    if (!pt.dn && !pt.dk) return;
+    const target = dndk2xy(pt.dn, pt.dk);
+    const color = pt.w > 0 ? '#34d399' : '#f87171';
+    const dx = target.x - center.x, dy = target.y - center.y;
+    const len = Math.sqrt(dx * dx + dy * dy);
+    const ux = dx / len, uy = dy / len;
+    // Shorten arrow to not overlap circles
+    const startX = center.x + ux * 10, startY = center.y + uy * 10;
+    const endX = target.x - ux * 10, endY = target.y - uy * 10;
+
+    // Arrow line
+    mx.beginPath();
+    mx.moveTo(startX, startY);
+    mx.lineTo(endX, endY);
+    mx.strokeStyle = color;
+    mx.lineWidth = 2;
+    mx.globalAlpha = 0.7;
+    mx.stroke();
+    mx.globalAlpha = 1;
+
+    // Arrowhead
+    const aLen = 7, aW = 3.5;
+    mx.beginPath();
+    mx.moveTo(endX, endY);
+    mx.lineTo(endX - ux * aLen + uy * aW, endY - uy * aLen - ux * aW);
+    mx.lineTo(endX - ux * aLen - uy * aW, endY - uy * aLen + ux * aW);
+    mx.closePath();
+    mx.fillStyle = color;
+    mx.fill();
+  });
+
+  // Draw stencil points with weight labels
+  pts.forEach(pt => {
+    const { x, y } = dndk2xy(pt.dn, pt.dk);
+    const isCenter = !pt.dn && !pt.dk;
+    const color = isCenter ? '#fbbf24' : (pt.w > 0 ? '#34d399' : '#f87171');
+    const r = isCenter ? 10 : 7 + Math.min(Math.abs(pt.w), 4) * 1;
+
+    // Glow
+    const grad = mx.createRadialGradient(x, y, r * 0.5, x, y, r + 8);
+    grad.addColorStop(0, color + '44');
+    grad.addColorStop(1, 'transparent');
+    mx.beginPath(); mx.arc(x, y, r + 8, 0, Math.PI * 2);
+    mx.fillStyle = grad; mx.fill();
+
+    // Circle
+    mx.beginPath(); mx.arc(x, y, r, 0, Math.PI * 2);
+    mx.fillStyle = color; mx.fill();
+
+    // Weight text inside circle
+    const wStr = pt.w === 1 ? '+1' : pt.w === -1 ? '−1' : pt.w === -2 ? '−2' : pt.w === -4 ? '−4' : (pt.w > 0 ? '+' : '') + pt.w;
+    mx.fillStyle = isCenter ? '#000' : '#fff';
+    mx.font = `600 ${isCenter ? 10 : 9}px JetBrains Mono`;
+    mx.textAlign = 'center';
+    mx.textBaseline = 'middle';
+    mx.fillText(wStr, x, y);
+
+    // Index label below
+    const label = isCenter ? '(n,k)' : `(n${pt.dn >= 0 ? '+' : ''}${pt.dn || ''},k${pt.dk >= 0 ? '+' : ''}${pt.dk || ''})`;
+    // Simplify label
+    let shortLabel;
+    if (isCenter) shortLabel = 'n,k';
+    else {
+      const nPart = pt.dn === 0 ? 'n' : pt.dn === 1 ? 'n+1' : pt.dn === -1 ? 'n−1' : `n${pt.dn > 0 ? '+' : ''}${pt.dn}`;
+      const kPart = pt.dk === 0 ? 'k' : pt.dk === 1 ? 'k+1' : pt.dk === -1 ? 'k−1' : `k${pt.dk > 0 ? '+' : ''}${pt.dk}`;
+      shortLabel = `${nPart},${kPart}`;
+    }
+    mx.fillStyle = '#666';
+    mx.font = '8px JetBrains Mono';
+    mx.textBaseline = 'top';
+    mx.fillText(shortLabel, x, y + r + 4);
+  });
+
+  // Denominator label at bottom
+  mx.fillStyle = '#888';
+  mx.font = '11px Source Serif 4, serif';
+  mx.textAlign = 'center';
+  mx.textBaseline = 'bottom';
+  const denomText = state.stencil.includes('-x') && !state.stencil.includes('-xy')
+    ? (state.stencil.includes('second') ? '÷ Δx²' : (state.stencil.includes('central') ? '÷ 2Δx' : '÷ Δx'))
+    : state.stencil.includes('-y')
+    ? (state.stencil.includes('second') ? '÷ Δy²' : (state.stencil.includes('central') ? '÷ 2Δy' : '÷ Δy'))
+    : state.stencil === 'second-xy' ? '÷ 4ΔxΔy'
+    : state.stencil === 'laplacian' ? '÷ Δx² (assuming Δx=Δy)' : '';
+  mx.fillText(denomText, mW / 2, mH - 4);
+
+  // Order badge
+  mx.fillStyle = st.order === 1 ? 'rgba(248,113,113,0.15)' : 'rgba(52,211,153,0.15)';
+  const badgeText = `O(h${st.order === 1 ? '' : '²'})`;
+  mx.font = '600 9px JetBrains Mono';
+  const bw = mx.measureText(badgeText).width + 10;
+  const bx = mW - bw - 6, by = 4;
+  const br = 4, bh = 16;
+  mx.beginPath();
+  mx.moveTo(bx + br, by); mx.lineTo(bx + bw - br, by); mx.quadraticCurveTo(bx + bw, by, bx + bw, by + br);
+  mx.lineTo(bx + bw, by + bh - br); mx.quadraticCurveTo(bx + bw, by + bh, bx + bw - br, by + bh);
+  mx.lineTo(bx + br, by + bh); mx.quadraticCurveTo(bx, by + bh, bx, by + bh - br);
+  mx.lineTo(bx, by + br); mx.quadraticCurveTo(bx, by, bx + br, by);
+  mx.closePath(); mx.fill();
+  mx.fillStyle = st.order === 1 ? '#f87171' : '#34d399';
+  mx.textAlign = 'center';
+  mx.textBaseline = 'middle';
+  mx.fillText(badgeText, bx + bw / 2, by + 8);
+}
+
+// ╔═══════════════════════════════════════╗
+// ║      STENCIL COMPUTATION (multi)      ║
+// ╚═══════════════════════════════════════╝
+function computeAllStencils() {
+  const container = document.getElementById('stencil-results');
+  if(state.selectedPoints.length === 0) { container.innerHTML = ''; return; }
+
+  const st = stencils[state.stencil];
+  const fn = funcs[state.func];
+  const dx = (state.b-state.a)/state.N, dy = (state.d-state.c)/state.K;
+  const s = { dx, dy };
+  const pts = st.points();
+
+  let html = '';
+  state.selectedPoints.forEach(sp => {
+    let outOfRange = false;
+    for(const pt of pts) { if(sp.n+pt.dn<0||sp.n+pt.dn>state.N||sp.k+pt.dk<0||sp.k+pt.dk>state.K){ outOfRange=true; break; } }
+
+    if(outOfRange) {
+      html += `<div class="sr-item"><div class="sr-header">(${sp.n}, ${sp.k})</div><div class="sr-row"><span class="sr-label">Out of range</span></div></div>`;
+      return;
+    }
+
+    let num=0;
+    for(const pt of pts) num += pt.w * fn.f(state.a+(sp.n+pt.dn)*dx, state.c+(sp.k+pt.dk)*dy);
+    const denom = (st.custom && state.stencil==='laplacian') ? dx*dx : st.div(s);
+    const approx = num/denom;
+    const xc=state.a+sp.n*dx, yc=state.c+sp.k*dy;
+    const exact = st.exact==='lap' ? fn.fxx(xc,yc)+fn.fyy(xc,yc) : fn[st.exact](xc,yc);
+    const error = Math.abs(approx-exact);
+    const errColor = error<0.01?'#34d399':(error<0.1?'#fbbf24':'#f87171');
+
+    html += `<div class="sr-item">
+      <div class="sr-header">(${sp.n}, ${sp.k}) — x=${xc.toFixed(3)}, y=${yc.toFixed(3)}</div>
+      <div class="sr-row"><span class="sr-label">FD approx</span><span class="sr-val">${approx.toFixed(6)}</span></div>
+      <div class="sr-row"><span class="sr-label">Exact</span><span class="sr-val">${exact.toFixed(6)}</span></div>
+      <div class="sr-row"><span class="sr-label">Error</span><span class="sr-err" style="color:${errColor}">${error.toExponential(3)}</span></div>
+    </div>`;
+  });
+  container.innerHTML = html;
+}
+
+// ╔═══════════════════════════════════════╗
+// ║         ACCURACY PLOT                  ║
+// ╚═══════════════════════════════════════╝
+function drawAccuracyPlot() {
+  const c=document.getElementById('acc-canvas'),cx=c.getContext('2d'),dpr=devicePixelRatio;
+  c.width=c.clientWidth*dpr;c.height=c.clientHeight*dpr;cx.setTransform(dpr,0,0,dpr,0,0);
+  const cW=c.clientWidth,cH=c.clientHeight;cx.clearRect(0,0,cW,cH);
+  const derivType=document.getElementById('acc-deriv').value,pointSel=document.getElementById('acc-point').value;
+  const fn=funcs[state.func],st=stencils[derivType];
+  const Ns=[];for(let n=4;n<=64;n+=2)Ns.push(n);
+  const errors=[],hs=[];
+  for(const N of Ns){const dx=(state.b-state.a)/N,K=N,dy=(state.d-state.c)/K,s={dx,dy};
+    const ni=pointSel==='center'?Math.floor(N/2):Math.floor(N/4),ki=pointSel==='center'?Math.floor(K/2):Math.floor(K/4);
+    const pts=st.points();let valid=true;for(const pt of pts)if(ni+pt.dn<0||ni+pt.dn>N||ki+pt.dk<0||ki+pt.dk>K){valid=false;break;}
+    if(!valid)continue;let num=0;for(const pt of pts)num+=pt.w*fn.f(state.a+(ni+pt.dn)*dx,state.c+(ki+pt.dk)*dy);
+    const denom=(st.custom&&derivType==='laplacian')?dx*dx:st.div(s),approx=num/denom;
+    const xc=state.a+ni*dx,yc=state.c+ki*dy,exact=st.exact==='lap'?fn.fxx(xc,yc)+fn.fyy(xc,yc):fn[st.exact](xc,yc);
+    const err=Math.abs(approx-exact);if(err>0){errors.push(Math.log10(err));hs.push(Math.log10(dx));}}
+  if(errors.length<2){cx.fillStyle='#555';cx.font='11px JetBrains Mono';cx.textAlign='center';cx.fillText('Not enough data',cW/2,cH/2);return;}
+  const pad={l:45,r:15,t:20,b:30},pW=cW-pad.l-pad.r,pH=cH-pad.t-pad.b;
+  const hMin=Math.min(...hs),hMax=Math.max(...hs),eMin=Math.min(...errors),eMax=Math.max(...errors);
+  const hRange=hMax-hMin||1,eRange=eMax-eMin||1;
+  const toX=v=>pad.l+(v-hMin)/hRange*pW,toY=v=>pad.t+pH-(v-eMin)/eRange*pH;
+  cx.strokeStyle='rgba(255,255,255,0.1)';cx.lineWidth=1;cx.beginPath();cx.moveTo(pad.l,pad.t);cx.lineTo(pad.l,cH-pad.b);cx.lineTo(cW-pad.r,cH-pad.b);cx.stroke();
+  cx.fillStyle='#555';cx.font='9px JetBrains Mono';cx.textAlign='center';cx.fillText('log₁₀(Δx)',pad.l+pW/2,cH-4);
+  cx.save();cx.translate(10,pad.t+pH/2);cx.rotate(-Math.PI/2);cx.fillText('log₁₀(error)',0,0);cx.restore();
+  cx.textAlign='center';cx.textBaseline='top';for(let i=Math.ceil(hMin);i<=Math.floor(hMax);i++){const x=toX(i);cx.fillStyle='#444';cx.fillText(i.toString(),x,cH-pad.b+4);cx.strokeStyle='rgba(255,255,255,0.04)';cx.beginPath();cx.moveTo(x,pad.t);cx.lineTo(x,cH-pad.b);cx.stroke();}
+  cx.textAlign='right';cx.textBaseline='middle';for(let i=Math.ceil(eMin);i<=Math.floor(eMax);i++){const y=toY(i);cx.fillStyle='#444';cx.fillText(i.toString(),pad.l-6,y);cx.strokeStyle='rgba(255,255,255,0.04)';cx.beginPath();cx.moveTo(pad.l,y);cx.lineTo(cW-pad.r,y);cx.stroke();}
+  cx.setLineDash([4,4]);cx.strokeStyle='rgba(248,113,113,0.3)';cx.lineWidth=1;cx.beginPath();cx.moveTo(toX(hMin),toY(eMin));cx.lineTo(toX(hMax),toY(eMin+(hMax-hMin)));cx.stroke();
+  cx.strokeStyle='rgba(52,211,153,0.3)';cx.beginPath();cx.moveTo(toX(hMin),toY(eMin));cx.lineTo(toX(hMax),toY(eMin+2*(hMax-hMin)));cx.stroke();cx.setLineDash([]);
+  cx.font='8px JetBrains Mono';cx.textAlign='left';cx.fillStyle='rgba(248,113,113,0.5)';cx.fillText('slope 1',toX(hMax)-35,toY(eMin+(hMax-hMin))-6);
+  cx.fillStyle='rgba(52,211,153,0.5)';cx.fillText('slope 2',toX(hMax)-35,toY(eMin+2*(hMax-hMin))-6);
+  cx.strokeStyle='#6c8aff';cx.lineWidth=1.5;cx.beginPath();for(let i=0;i<hs.length;i++){const x=toX(hs[i]),y=toY(errors[i]);i===0?cx.moveTo(x,y):cx.lineTo(x,y);}cx.stroke();
+  for(let i=0;i<hs.length;i++){cx.beginPath();cx.arc(toX(hs[i]),toY(errors[i]),2.5,0,Math.PI*2);cx.fillStyle='#6c8aff';cx.fill();}
+  if(hs.length>=4){const n=hs.length,mid=Math.floor(n/2),slope=(errors[n-1]-errors[mid])/(hs[n-1]-hs[mid]);cx.fillStyle='#6c8aff';cx.font='600 10px JetBrains Mono';cx.textAlign='right';cx.fillText(`slope ≈ ${slope.toFixed(2)}`,cW-pad.r,pad.t+10);}
+  const infoEl=document.getElementById('acc-info'),orderWord=st.order===1?'first':'second';
+  infoEl.innerHTML=`<strong>${st.name}</strong> is O(Δx<sup>${st.order}</sup>) — ${orderWord} order accurate.<br>`+(st.order===2?'Doubling N should reduce the error by ~4×.':'Doubling N should reduce the error by ~2×.');
+}
+
+function updateStencilInfo() {
+  const st=stencils[state.stencil];
+  document.getElementById('stencil-info').innerHTML =
+    `<strong>${st.name}</strong><br><span class="formula">${st.formula}</span>` +
+    (state.selectedPoints.length ? `<br>${state.selectedPoints.length} point(s) selected` : '<br>Click grid points to see stencils.');
+  drawMolecule();
+}
+
+// ═══════════ EVENTS ═══════════
+
+document.querySelectorAll('.view-btn').forEach(btn => btn.addEventListener('click', () => {
+  document.querySelectorAll('.view-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active'); state.viewMode=btn.dataset.view;
+  document.getElementById('drag-hint').style.opacity=state.viewMode==='3d'?'1':'0'; render();
+}));
+
+document.querySelectorAll('.tab').forEach(tab => tab.addEventListener('click', () => {
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(tc=>tc.classList.remove('active'));
+  tab.classList.add('active'); document.getElementById('tab-'+tab.dataset.tab).classList.add('active');
+  state.tab=tab.dataset.tab; if(tab.dataset.tab==='accuracy')setTimeout(drawAccuracyPlot,50); if(tab.dataset.tab==='stencils')setTimeout(drawMolecule,50); render();
+}));
+
+document.querySelectorAll('.stencil-btn').forEach(btn => btn.addEventListener('click', () => {
+  document.querySelectorAll('.stencil-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active'); state.stencil=btn.dataset.stencil;
+  updateStencilInfo(); computeAllStencils(); render();
+}));
+
+document.getElementById('deselect-all').addEventListener('click', () => {
+  state.selectedPoints = [];
+  updateStencilInfo(); computeAllStencils(); render();
+});
+
+function bindSlider(id,prop,display){document.getElementById(id).addEventListener('input',function(){state[prop]=parseFloat(this.value);if(display)document.getElementById(display).textContent=this.value;updateDerivedValues();render();if(state.tab==='accuracy')drawAccuracyPlot();});}
+bindSlider('n-slider','N','n-val');bindSlider('k-slider','K','k-val');
+bindSlider('a-slider','a');bindSlider('b-slider','b');bindSlider('c-slider','c');bindSlider('d-slider','d');
+['a-slider','b-slider'].forEach(id=>document.getElementById(id).addEventListener('input',()=>{document.getElementById('ab-val').textContent=`[${state.a}, ${state.b}]`;}));
+['c-slider','d-slider'].forEach(id=>document.getElementById(id).addEventListener('input',()=>{document.getElementById('cd-val').textContent=`[${state.c}, ${state.d}]`;}));
+document.getElementById('func-select').addEventListener('change',e=>{state.func=e.target.value;document.getElementById('func-label').textContent=funcs[state.func].label;updateDerivedValues();render();computeAllStencils();if(state.tab==='accuracy')drawAccuracyPlot();});
+document.getElementById('show-heatmap').addEventListener('change',e=>{state.showHeatmap=e.target.checked;render();});
+document.getElementById('show-smooth-surface').addEventListener('change',e=>{state.showSmoothSurface=e.target.checked;render();});
+document.getElementById('show-surface').addEventListener('change',e=>{state.showSurface=e.target.checked;render();});
+document.getElementById('show-values').addEventListener('change',e=>{state.showValues=e.target.checked;render();});
+document.getElementById('acc-deriv').addEventListener('change',drawAccuracyPlot);
+document.getElementById('acc-point').addEventListener('change',drawAccuracyPlot);
+
+function updateDerivedValues(){const dx=(state.b-state.a)/state.N,dy=(state.d-state.c)/state.K;document.getElementById('dx-val').textContent=dx.toFixed(4);document.getElementById('dy-val').textContent=dy.toFixed(4);document.getElementById('total-pts').textContent=(state.N+1)*(state.K+1);}
+
+// ═══════════ CANVAS MOUSE ═══════════
+canvas.addEventListener('mousemove',e=>{
+  const rect=canvas.getBoundingClientRect(),px=e.clientX-rect.left,py=e.clientY-rect.top;
+  if(state.viewMode==='3d'&&state.dragging){state.cam.rotZ=state.dragCamStart.rotZ+(e.clientX-state.dragStart.x)*0.005;state.cam.rotX=state.dragCamStart.rotX+(e.clientY-state.dragStart.y)*0.005;render();return;}
+  if(state.viewMode==='above'){const m=getGridMetrics(),gp=pixelToGrid(px,py,m);state.hover=gp;
+    if(gp){const fn=funcs[state.func],xVal=state.a+gp.n*m.dx,yVal=state.c+gp.k*m.dy;
+      tooltip.innerHTML=`<span class="tt-label">Point</span> (n=${gp.n}, k=${gp.k})<br><span class="tt-label">x</span> = <span class="tt-val">${xVal.toFixed(3)}</span>, <span class="tt-label">y</span> = <span class="tt-val">${yVal.toFixed(3)}</span><br><span class="tt-label">U</span> = <span class="tt-val">${fn.f(xVal,yVal).toFixed(5)}</span>`;
+      tooltip.classList.add('visible');tooltip.style.left=(e.clientX-rect.left+16)+'px';tooltip.style.top=(e.clientY-rect.top-10)+'px';canvas.style.cursor='pointer';
+    }else{tooltip.classList.remove('visible');canvas.style.cursor='default';}render();}
+});
+canvas.addEventListener('mouseleave',()=>{state.hover=null;tooltip.classList.remove('visible');if(state.dragging)state.dragging=false;render();});
+canvas.addEventListener('mousedown',e=>{if(state.viewMode==='3d'){state.dragging=true;state.dragStart={x:e.clientX,y:e.clientY};state.dragCamStart={rotX:state.cam.rotX,rotZ:state.cam.rotZ};canvas.style.cursor='grabbing';}});
+canvas.addEventListener('mouseup',e=>{if(state.viewMode==='3d'){if(state.dragging&&state.dragStart&&Math.abs(e.clientX-state.dragStart.x)<3&&Math.abs(e.clientY-state.dragStart.y)<3)select3DPoint(e);state.dragging=false;canvas.style.cursor='grab';}});
+canvas.addEventListener('click',e=>{if(state.viewMode==='above'){const rect=canvas.getBoundingClientRect(),m=getGridMetrics(),gp=pixelToGrid(e.clientX-rect.left,e.clientY-rect.top,m);if(gp){togglePoint(gp.n,gp.k);updateStencilInfo();computeAllStencils();}render();}});
+canvas.addEventListener('wheel',e=>{if(state.viewMode==='3d'){e.preventDefault();state.cam.zoom*=e.deltaY>0?0.92:1.08;state.cam.zoom=Math.max(0.5,Math.min(5,state.cam.zoom));render();}},{passive:false});
+
+function select3DPoint(e){
+  const rect=canvas.getBoundingClientRect(),mx=e.clientX-rect.left,my=e.clientY-rect.top;
+  const fn=funcs[state.func],dx=(state.b-state.a)/state.N,dy=(state.d-state.c)/state.K;
+  const midX=(state.a+state.b)/2,midY=(state.c+state.d)/2,scaleXY=Math.max(state.b-state.a,state.d-state.c);
+  let vmin=Infinity,vmax=-Infinity;
+  for(let n=0;n<=state.N;n++)for(let k=0;k<=state.K;k++){const v=fn.f(state.a+n*dx,state.c+k*dy);if(v<vmin)vmin=v;if(v>vmax)vmax=v;}
+  const vRange=vmax-vmin||1,vMid=(vmax+vmin)/2;
+  let bestDist=20,bestPt=null;
+  for(let n=0;n<=state.N;n++)for(let k=0;k<=state.K;k++){const xw=state.a+n*dx,yw=state.c+k*dy;const p=project3D((xw-midX)/scaleXY*2,(yw-midY)/scaleXY*2,(fn.f(xw,yw)-vMid)/vRange*1.2);const d=Math.sqrt((mx-p.x)**2+(my-p.y)**2);if(d<bestDist){bestDist=d;bestPt={n,k};}}
+  if(bestPt){togglePoint(bestPt.n,bestPt.k);updateStencilInfo();computeAllStencils();render();}
+}
+
+// ═══════════ INIT ═══════════
+updateDerivedValues(); updateStencilInfo(); resize();
+</script>
+</body>
+</html>

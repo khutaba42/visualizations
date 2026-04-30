@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>2×2 Symmetric Matrix Transform</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.4.0/math.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500&family=Source+Serif+4:ital,wght@0,300;0,400;1,300&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #0a0a0f;
+    color: #c8c8d0;
+    font-family: 'JetBrains Mono', monospace;
+    overflow: hidden;
+    height: 100vh;
+    display: flex;
+  }
+
+  .sidebar {
+    width: 320px;
+    min-width: 320px;
+    height: 100vh;
+    overflow-y: auto;
+    background: rgba(10,10,18,0.95);
+    border-right: 1px solid rgba(255,255,255,0.06);
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    z-index: 10;
+  }
+
+  .sidebar::-webkit-scrollbar { width: 4px; }
+  .sidebar::-webkit-scrollbar-track { background: transparent; }
+  .sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+  .sidebar h1 {
+    font-family: 'Source Serif 4', serif;
+    font-weight: 300;
+    font-size: 20px;
+    color: #e8e8f0;
+  }
+
+  .sidebar .subtitle { font-size: 11px; color: #666; font-weight: 300; margin-top: 2px; }
+
+  .section-title {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: #888;
+    margin-bottom: 8px;
+    margin-top: 4px;
+  }
+
+  .matrix-display {
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    align-items: center;
+    margin-bottom: 8px;
+  }
+
+  .bracket {
+    font-size: 48px;
+    font-weight: 100;
+    color: #666;
+    line-height: 1;
+    font-family: 'Source Serif 4', serif;
+  }
+
+  .matrix-inputs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 1fr 1fr;
+    gap: 6px;
+    padding: 4px 8px;
+  }
+
+  .matrix-inputs input {
+    width: 100%;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    color: #ddd;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    padding: 8px 10px;
+    border-radius: 6px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    text-align: center;
+  }
+
+  .matrix-inputs input:focus {
+    border-color: rgba(120,180,255,0.4);
+    box-shadow: 0 0 8px rgba(120,180,255,0.1);
+  }
+
+  .matrix-inputs input.linked {
+    background: rgba(180,140,255,0.06);
+    border-color: rgba(180,140,255,0.2);
+    color: #b8a0e0;
+  }
+
+  .matrix-inputs input.valid {
+    border-color: rgba(80,200,120,0.4);
+  }
+
+  .matrix-inputs input.invalid {
+    border-color: rgba(255,80,80,0.4);
+    box-shadow: 0 0 6px rgba(255,80,80,0.1);
+  }
+
+  .matrix-inputs input.has-func {
+    background: rgba(80,200,255,0.06);
+    border-color: rgba(80,200,255,0.3);
+    color: #7dd8ff;
+  }
+
+  .slider-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 6px;
+  }
+
+  .slider-row label { font-size: 12px; color: #aaa; min-width: 14px; }
+
+  .slider-row input[type="range"] {
+    flex: 1;
+    -webkit-appearance: none;
+    height: 4px;
+    background: rgba(255,255,255,0.08);
+    border-radius: 2px;
+    outline: none;
+  }
+
+  .slider-row input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: #78b4ff;
+    cursor: pointer;
+    border: 2px solid #0a0a0f;
+  }
+
+  .slider-row .val { font-size: 11px; color: #888; min-width: 36px; text-align: right; }
+
+  #sliders-container { transition: opacity 0.3s; }
+
+  .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+
+  .info-card {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 8px;
+    padding: 10px 12px;
+  }
+
+  .info-card .label { font-size: 9px; text-transform: uppercase; letter-spacing: 1.2px; color: #666; margin-bottom: 4px; }
+  .info-card .value { font-size: 13px; color: #e0e0e8; font-weight: 400; }
+  .info-card.wide { grid-column: 1 / -1; }
+
+  .legend-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; font-size: 11px; color: #aaa; }
+  .legend-swatch { width: 14px; height: 14px; border-radius: 3px; flex-shrink: 0; }
+
+  .toggle-row { display: flex; align-items: center; gap: 8px; font-size: 11px; color: #aaa; cursor: pointer; margin-bottom: 4px; }
+  .toggle-row input[type="checkbox"] { accent-color: #78b4ff; }
+
+  .hint { font-size: 10px; color: #555; font-style: italic; margin-top: 4px; }
+  .parse-status { font-size: 10px; margin-top: 4px; min-height: 14px; }
+  .parse-status.ok { color: #60c878; }
+  .parse-status.err { color: #ff7070; }
+
+  .canvas-area { flex: 1; position: relative; overflow: hidden; }
+  .canvas-area canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+
+  .tooltip {
+    position: absolute;
+    background: rgba(10,10,18,0.92);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-size: 11px;
+    color: #ccc;
+    pointer-events: none;
+    z-index: 20;
+    opacity: 0;
+    transition: opacity 0.15s;
+    white-space: nowrap;
+  }
+  .tooltip.visible { opacity: 1; }
+
+  .overlay-legend {
+    position: absolute;
+    bottom: 16px; right: 16px;
+    background: rgba(10,10,18,0.8);
+    backdrop-filter: blur(8px);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 8px;
+    padding: 10px 14px;
+    pointer-events: none;
+    z-index: 3;
+  }
+  .overlay-legend .leg-item { display: flex; align-items: center; gap: 6px; font-size: 10px; color: rgba(255,255,255,0.5); margin-bottom: 3px; }
+  .overlay-legend .leg-item:last-child { margin-bottom: 0; }
+  .leg-line { width: 18px; height: 2px; border-radius: 1px; flex-shrink: 0; }
+</style>
+</head>
+<body>
+
+<div class="sidebar">
+  <div>
+    <h1>Matrix Transform</h1>
+    <div class="subtitle">2×2 symmetric matrix · plane visualization</div>
+  </div>
+
+  <div>
+    <div class="section-title">Matrix A</div>
+    <div class="matrix-display">
+      <span class="bracket">[</span>
+      <div class="matrix-inputs">
+        <input id="input-a" type="text" value="2" placeholder="a(x,y)" title="a(x,y)">
+        <input id="input-b" type="text" value="1" placeholder="b(x,y)" title="b(x,y)" class="linked">
+        <input id="input-b2" type="text" value="1" placeholder="b" title="b — linked" class="linked" disabled>
+        <input id="input-c" type="text" value="3" placeholder="c(x,y)" title="c(x,y)">
+      </div>
+      <span class="bracket">]</span>
+    </div>
+    <div class="hint">Type constants (3) or functions of x,y (x^2+y, sin(x), x*y)</div>
+    <div class="parse-status" id="parse-status"></div>
+  </div>
+
+  <div id="sliders-container">
+    <div class="section-title">Quick Adjust (constants only)</div>
+    <div class="slider-row">
+      <label>a</label>
+      <input type="range" id="slider-a" min="-5" max="5" step="0.1" value="2">
+      <span class="val" id="slider-a-val">2.0</span>
+    </div>
+    <div class="slider-row">
+      <label>b</label>
+      <input type="range" id="slider-b" min="-5" max="5" step="0.1" value="1">
+      <span class="val" id="slider-b-val">1.0</span>
+    </div>
+    <div class="slider-row">
+      <label>c</label>
+      <input type="range" id="slider-c" min="-5" max="5" step="0.1" value="3">
+      <span class="val" id="slider-c-val">3.0</span>
+    </div>
+  </div>
+
+  <div>
+    <div class="section-title">Selected Point (click canvas)</div>
+    <div class="info-grid">
+      <div class="info-card">
+        <div class="label">Point (x, y)</div>
+        <div class="value" id="info-point">(1.0, 1.0)</div>
+      </div>
+      <div class="info-card">
+        <div class="label">det(A)</div>
+        <div class="value" id="info-det">—</div>
+      </div>
+      <div class="info-card">
+        <div class="label">λ₁</div>
+        <div class="value" id="info-l1">—</div>
+      </div>
+      <div class="info-card">
+        <div class="label">λ₂</div>
+        <div class="value" id="info-l2">—</div>
+      </div>
+      <div class="info-card wide">
+        <div class="label">Discriminant (b² − ac)</div>
+        <div class="value" id="info-disc">—</div>
+      </div>
+    </div>
+  </div>
+
+  <div>
+    <div class="section-title">Classification (Background)</div>
+    <div class="legend-row"><div class="legend-swatch" style="background:rgba(255,80,80,0.5)"></div><span>Hyperbolic (b²−ac &gt; 0)</span></div>
+    <div class="legend-row"><div class="legend-swatch" style="background:rgba(80,200,120,0.5)"></div><span>Parabolic (b²−ac ≈ 0)</span></div>
+    <div class="legend-row"><div class="legend-swatch" style="background:rgba(80,140,255,0.5)"></div><span>Elliptic (b²−ac &lt; 0)</span></div>
+  </div>
+
+  <div>
+    <div class="section-title">Eigenvectors</div>
+    <div class="legend-row"><div class="legend-swatch" style="background:rgba(255,100,100,0.8)"></div><span>Positive eigenvalue</span></div>
+    <div class="legend-row"><div class="legend-swatch" style="background:rgba(100,160,255,0.8)"></div><span>Negative eigenvalue</span></div>
+  </div>
+
+  <div>
+    <div class="section-title">Display</div>
+    <label class="toggle-row"><input type="checkbox" id="toggle-discrim" checked> Discriminant shading</label>
+    <label class="toggle-row"><input type="checkbox" id="toggle-eigen" checked> Eigenvectors</label>
+    <label class="toggle-row"><input type="checkbox" id="toggle-orig-grid" checked> Original grid</label>
+    <label class="toggle-row"><input type="checkbox" id="toggle-xform-grid" checked> Transformed grid</label>
+    <label class="toggle-row"><input type="checkbox" id="toggle-deform" checked> Unit circle deformation</label>
+  </div>
+</div>
+
+<div class="canvas-area">
+  <canvas id="canvas-main"></canvas>
+  <div class="tooltip" id="tooltip"></div>
+  <div class="overlay-legend">
+    <div class="leg-item"><div class="leg-line" style="background:rgba(255,255,255,0.13)"></div> Original grid</div>
+    <div class="leg-item"><div class="leg-line" style="background:rgba(80,220,255,0.6)"></div> Transformed grid</div>
+    <div class="leg-item"><div class="leg-line" style="background:rgba(255,220,80,0.7);height:3px"></div> Unit circle → image</div>
+  </div>
+</div>
+
+<script>
+(function() {
+'use strict';
+
+// Check math.js loaded
+if (typeof math === 'undefined') {
+  document.body.innerHTML = '<div style="color:#ff7070;padding:40px;font-size:16px;">Error: math.js failed to load. Check your internet connection and reload.</div>';
+  return;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  State
+// ═══════════════════════════════════════════════════════════════
+const state = {
+  exprA: null, exprB: null, exprC: null,
+  strA: '2', strB: '1', strC: '3',
+  isConstA: true, isConstB: true, isConstC: true,
+  constA: 2, constB: 1, constC: 3,
+  selectedPoint: { x: 1, y: 1 },
+  viewRange: 5,
+  showDiscriminant: true,
+  showEigenvectors: true,
+  showOrigGrid: true,
+  showXformGrid: true,
+  showDeformation: true,
+  animT: 0,
+  needsFullRedraw: true,
+  discrimCache: null,
+  discrimCacheKey: '',
+};
+
+// ═══════════════════════════════════════════════════════════════
+//  Elements
+// ═══════════════════════════════════════════════════════════════
+const canvas = document.getElementById('canvas-main');
+const ctx = canvas.getContext('2d');
+const tooltip = document.getElementById('tooltip');
+const parseStatus = document.getElementById('parse-status');
+
+const inputA = document.getElementById('input-a');
+const inputB = document.getElementById('input-b');
+const inputB2 = document.getElementById('input-b2');
+const inputC = document.getElementById('input-c');
+
+const sliderA = document.getElementById('slider-a');
+const sliderB = document.getElementById('slider-b');
+const sliderC = document.getElementById('slider-c');
+const sliderAVal = document.getElementById('slider-a-val');
+const sliderBVal = document.getElementById('slider-b-val');
+const sliderCVal = document.getElementById('slider-c-val');
+const slidersContainer = document.getElementById('sliders-container');
+
+// ═══════════════════════════════════════════════════════════════
+//  Expression Parsing
+// ═══════════════════════════════════════════════════════════════
+function tryParse(str) {
+  str = str.trim();
+  if (!str) return null;
+  try {
+    const node = math.parse(str);
+    const compiled = node.compile();
+    // test eval — must produce a finite real number at (0,0) or (1,1)
+    let v = compiled.evaluate({ x: 0, y: 0 });
+    if (typeof v === 'object' && v !== null) v = v.re !== undefined ? v.re : NaN;
+    if (!isFinite(v)) {
+      // try (1,1) in case of division by zero at origin
+      v = compiled.evaluate({ x: 1, y: 1 });
+      if (typeof v === 'object' && v !== null) v = v.re !== undefined ? v.re : NaN;
+    }
+    if (typeof v !== 'number' || !isFinite(v)) return null;
+    return compiled;
+  } catch(e) { return null; }
+}
+
+function isConstant(str) {
+  str = str.trim();
+  if (!str) return true;
+  try {
+    const node = math.parse(str);
+    const mathNames = new Set(['pi','e','i','sin','cos','tan','asin','acos','atan',
+      'sqrt','log','ln','exp','abs','ceil','floor','round','sign','max','min','pow','atan2',
+      'sinh','cosh','tanh','sec','csc','cot']);
+    let hasVar = false;
+    node.traverse(n => { if (n.isSymbolNode && !mathNames.has(n.name)) hasVar = true; });
+    return !hasVar;
+  } catch(e) { return true; }
+}
+
+// Critical fix: coerce math.js results to real numbers
+function toReal(v) {
+  if (typeof v === 'number') return isFinite(v) ? v : 0;
+  if (v && typeof v === 'object') {
+    // Complex number from math.js
+    if (v.re !== undefined) return isFinite(v.re) ? v.re : 0;
+    // BigNumber or other
+    const n = Number(v);
+    return isFinite(n) ? n : 0;
+  }
+  return 0;
+}
+
+function evalExpr(compiled, x, y, fallback) {
+  if (!compiled) return fallback;
+  try {
+    const raw = compiled.evaluate({ x, y });
+    const v = toReal(raw);
+    return v;
+  } catch(e) { return fallback; }
+}
+
+function updateExpressions() {
+  const sa = inputA.value, sb = inputB.value, sc = inputC.value;
+  state.strA = sa; state.strB = sb; state.strC = sc;
+  state.exprA = tryParse(sa);
+  state.exprB = tryParse(sb);
+  state.exprC = tryParse(sc);
+  state.isConstA = isConstant(sa);
+  state.isConstB = isConstant(sb);
+  state.isConstC = isConstant(sc);
+
+  if (state.isConstA && state.exprA) state.constA = evalExpr(state.exprA, 0, 0, 0);
+  if (state.isConstB && state.exprB) state.constB = evalExpr(state.exprB, 0, 0, 0);
+  if (state.isConstC && state.exprC) state.constC = evalExpr(state.exprC, 0, 0, 0);
+
+  inputB2.value = sb;
+
+  // Visual feedback on inputs
+  [inputA, inputB, inputC].forEach((el, i) => {
+    const expr = [state.exprA, state.exprB, state.exprC][i];
+    const isConst = [state.isConstA, state.isConstB, state.isConstC][i];
+    const str = el.value.trim();
+    el.classList.remove('valid', 'invalid', 'has-func', 'linked');
+    if (!str) return;
+    if (!expr) {
+      el.classList.add('invalid');
+    } else if (!isConst) {
+      el.classList.add('has-func');
+    } else {
+      el.classList.add('valid');
+    }
+  });
+  inputB2.classList.add('linked');
+  if (inputB.classList.contains('has-func')) inputB2.classList.add('has-func');
+
+  // Parse status message
+  const allParsed = (sa.trim() ? !!state.exprA : true) &&
+                    (sb.trim() ? !!state.exprB : true) &&
+                    (sc.trim() ? !!state.exprC : true);
+  const hasFunc = !state.isConstA || !state.isConstB || !state.isConstC;
+
+  if (!allParsed) {
+    parseStatus.textContent = '⚠ Expression error — check syntax';
+    parseStatus.className = 'parse-status err';
+  } else if (hasFunc) {
+    parseStatus.textContent = '✓ f(x,y) mode — matrix varies across plane';
+    parseStatus.className = 'parse-status ok';
+  } else {
+    parseStatus.textContent = '';
+    parseStatus.className = 'parse-status';
+  }
+
+  // Sliders
+  const allConst = state.isConstA && state.isConstB && state.isConstC;
+  slidersContainer.style.opacity = allConst ? '1' : '0.3';
+  sliderA.disabled = !state.isConstA;
+  sliderB.disabled = !state.isConstB;
+  sliderC.disabled = !state.isConstC;
+
+  if (state.isConstA) { sliderA.value = state.constA; sliderAVal.textContent = state.constA.toFixed(1); }
+  if (state.isConstB) { sliderB.value = state.constB; sliderBVal.textContent = state.constB.toFixed(1); }
+  if (state.isConstC) { sliderC.value = state.constC; sliderCVal.textContent = state.constC.toFixed(1); }
+
+  state.needsFullRedraw = true;
+}
+
+function getABC(x, y) {
+  return {
+    a: evalExpr(state.exprA, x, y, state.constA),
+    b: evalExpr(state.exprB, x, y, state.constB),
+    c: evalExpr(state.exprC, x, y, state.constC),
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Linear Algebra
+// ═══════════════════════════════════════════════════════════════
+function eigenDecomp(a, b, c) {
+  const trace = a + c;
+  const det = a * c - b * b;
+  const disc_eigen = Math.max(0, trace * trace - 4 * det);
+  const sqrtD = Math.sqrt(disc_eigen);
+  const l1 = (trace + sqrtD) / 2;
+  const l2 = (trace - sqrtD) / 2;
+  let v1, v2;
+  if (Math.abs(b) > 1e-10) {
+    v1 = normalize([l1 - c, b]);
+    v2 = normalize([l2 - c, b]);
+  } else {
+    v1 = [1, 0]; v2 = [0, 1];
+  }
+  return { l1, l2, v1, v2, det, discriminant: b * b - a * c };
+}
+
+function normalize(v) {
+  const len = Math.sqrt(v[0]*v[0] + v[1]*v[1]);
+  return len < 1e-12 ? [1, 0] : [v[0]/len, v[1]/len];
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Coordinates
+// ═══════════════════════════════════════════════════════════════
+function w2s(x, y) {
+  const w = canvas._dw, h = canvas._dh;
+  const s = Math.min(w, h) / (2 * state.viewRange);
+  return [w / 2 + x * s, h / 2 - y * s];
+}
+
+function s2w(px, py) {
+  const w = canvas._dw, h = canvas._dh;
+  const s = Math.min(w, h) / (2 * state.viewRange);
+  return [(px - w / 2) / s, -(py - h / 2) / s];
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Drawing Primitives
+// ═══════════════════════════════════════════════════════════════
+function drawArrow(c, x, y, dir, len, color, lw) {
+  const [sx, sy] = w2s(x, y);
+  const [ex, ey] = w2s(x + dir[0] * len, y + dir[1] * len);
+  c.strokeStyle = color;
+  c.lineWidth = lw || 1.5;
+  c.beginPath(); c.moveTo(sx, sy); c.lineTo(ex, ey); c.stroke();
+  const angle = Math.atan2(ey - sy, ex - sx);
+  const hl = 5;
+  c.fillStyle = color;
+  c.beginPath();
+  c.moveTo(ex, ey);
+  c.lineTo(ex - hl * Math.cos(angle - 0.4), ey - hl * Math.sin(angle - 0.4));
+  c.lineTo(ex - hl * Math.cos(angle + 0.4), ey - hl * Math.sin(angle + 0.4));
+  c.closePath(); c.fill();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Discriminant Background (pixel buffer, cached)
+// ═══════════════════════════════════════════════════════════════
+function computeDiscriminantImage() {
+  const dpr = window.devicePixelRatio || 1;
+  const pw = canvas.width, ph = canvas.height;
+  const step = Math.max(4, Math.floor(8 * dpr)); // coarser for perf with functions
+  const imgData = ctx.createImageData(pw, ph);
+  const data = imgData.data;
+
+  for (let py = 0; py < ph; py += step) {
+    for (let px = 0; px < pw; px += step) {
+      const [x, y] = s2w(px / dpr, py / dpr);
+      const { a, b, c } = getABC(x, y);
+      const disc = b * b - a * c;
+      let r, g, bl, alpha;
+      if (disc > 0.01) {
+        const t = Math.min(Math.abs(disc) * 0.12, 0.45);
+        r = 255; g = 80; bl = 80; alpha = t * 255;
+      } else if (disc < -0.01) {
+        const t = Math.min(Math.abs(disc) * 0.12, 0.45);
+        r = 80; g = 140; bl = 255; alpha = t * 255;
+      } else {
+        r = 80; g = 200; bl = 120; alpha = 35;
+      }
+      for (let dy = 0; dy < step && py + dy < ph; dy++) {
+        for (let dx = 0; dx < step && px + dx < pw; dx++) {
+          const i = ((py + dy) * pw + (px + dx)) * 4;
+          data[i] = r; data[i+1] = g; data[i+2] = bl; data[i+3] = alpha;
+        }
+      }
+    }
+  }
+  return imgData;
+}
+
+function drawDiscriminant() {
+  const key = `${canvas.width},${canvas.height},${state.strA},${state.strB},${state.strC},${state.viewRange}`;
+  if (state.discrimCacheKey !== key) {
+    state.discrimCache = computeDiscriminantImage();
+    state.discrimCacheKey = key;
+  }
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.putImageData(state.discrimCache, 0, 0);
+  ctx.restore();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Grid Layers
+// ═══════════════════════════════════════════════════════════════
+function drawOriginalGrid() {
+  const range = state.viewRange;
+  ctx.strokeStyle = 'rgba(255,255,255,0.07)';
+  ctx.lineWidth = 0.5;
+  for (let i = -Math.floor(range); i <= Math.floor(range); i++) {
+    let [x1, y1] = w2s(i, -range); let [x2, y2] = w2s(i, range);
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+    [x1, y1] = w2s(-range, i); [x2, y2] = w2s(range, i);
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+  }
+}
+
+function drawAxes() {
+  const range = state.viewRange;
+  ctx.strokeStyle = 'rgba(255,255,255,0.18)';
+  ctx.lineWidth = 1.2;
+  let [x1, y1] = w2s(-range, 0); let [x2, y2] = w2s(range, 0);
+  ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+  [x1, y1] = w2s(0, -range); [x2, y2] = w2s(0, range);
+  ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+
+  ctx.fillStyle = 'rgba(255,255,255,0.25)';
+  ctx.font = '10px JetBrains Mono';
+  ctx.textAlign = 'center';
+  for (let i = -Math.floor(range); i <= Math.floor(range); i++) {
+    if (i === 0) continue;
+    const [tx, ty] = w2s(i, 0); ctx.fillText(i, tx, ty + 13);
+    const [tx2, ty2] = w2s(0, i); ctx.fillText(i, tx2 - 13, ty2 + 4);
+  }
+}
+
+function drawTransformedGrid() {
+  const range = state.viewRange;
+  const steps = 40;
+
+  ctx.strokeStyle = 'rgba(80,220,255,0.35)';
+  ctx.lineWidth = 1.2;
+
+  for (let gx = -Math.floor(range); gx <= Math.floor(range); gx++) {
+    ctx.beginPath();
+    for (let i = 0; i <= steps; i++) {
+      const y = -range + (2 * range * i) / steps;
+      const { a, b, c } = getABC(gx, y);
+      const tx = a * gx + b * y, ty = b * gx + c * y;
+      const [sx, sy] = w2s(tx, ty);
+      i === 0 ? ctx.moveTo(sx, sy) : ctx.lineTo(sx, sy);
+    }
+    ctx.stroke();
+  }
+
+  for (let gy = -Math.floor(range); gy <= Math.floor(range); gy++) {
+    ctx.beginPath();
+    for (let i = 0; i <= steps; i++) {
+      const x = -range + (2 * range * i) / steps;
+      const { a, b, c } = getABC(x, gy);
+      const tx = a * x + b * gy, ty = b * x + c * gy;
+      const [sx, sy] = w2s(tx, ty);
+      i === 0 ? ctx.moveTo(sx, sy) : ctx.lineTo(sx, sy);
+    }
+    ctx.stroke();
+  }
+
+  // Dots at intersections
+  ctx.fillStyle = 'rgba(80,220,255,0.45)';
+  for (let gx = -Math.floor(range); gx <= Math.floor(range); gx++) {
+    for (let gy = -Math.floor(range); gy <= Math.floor(range); gy++) {
+      const { a, b, c } = getABC(gx, gy);
+      const [sx, sy] = w2s(a * gx + b * gy, b * gx + c * gy);
+      ctx.beginPath(); ctx.arc(sx, sy, 2.5, 0, Math.PI * 2); ctx.fill();
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Eigenvectors
+// ═══════════════════════════════════════════════════════════════
+function drawEigenvectors() {
+  const range = state.viewRange;
+  const arrowLen = 0.32;
+  for (let x = -Math.floor(range); x <= Math.floor(range); x++) {
+    for (let y = -Math.floor(range); y <= Math.floor(range); y++) {
+      const { a, b, c } = getABC(x, y);
+      const { l1, l2, v1, v2 } = eigenDecomp(a, b, c);
+      const c1 = l1 >= 0 ? 'rgba(255,100,100,0.65)' : 'rgba(100,160,255,0.65)';
+      const c2 = l2 >= 0 ? 'rgba(255,100,100,0.65)' : 'rgba(100,160,255,0.65)';
+      drawArrow(ctx, x, y, v1, arrowLen, c1);
+      drawArrow(ctx, x, y, [-v1[0], -v1[1]], arrowLen, c1);
+      drawArrow(ctx, x, y, v2, arrowLen, c2);
+      drawArrow(ctx, x, y, [-v2[0], -v2[1]], arrowLen, c2);
+    }
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Selected Point + Unit Circle Deformation
+// ═══════════════════════════════════════════════════════════════
+function drawSelectedMarker() {
+  const { x, y } = state.selectedPoint;
+  const [sx, sy] = w2s(x, y);
+  const pulse = 0.5 + 0.5 * Math.sin(state.animT * 3);
+  ctx.strokeStyle = `rgba(255,220,80,${0.4 + pulse * 0.3})`;
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.arc(sx, sy, 8 + pulse * 3, 0, Math.PI * 2); ctx.stroke();
+  ctx.fillStyle = 'rgba(255,220,80,0.85)';
+  ctx.beginPath(); ctx.arc(sx, sy, 3, 0, Math.PI * 2); ctx.fill();
+}
+
+function drawUnitCircleDeformation() {
+  const { x: px, y: py } = state.selectedPoint;
+  const scale = Math.min(canvas._dw, canvas._dh) / (2 * state.viewRange);
+  const circR = 0.6;
+
+  // Dashed original circle
+  const [sx, sy] = w2s(px, py);
+  ctx.strokeStyle = 'rgba(255,255,255,0.12)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([4, 4]);
+  ctx.beginPath(); ctx.arc(sx, sy, circR * scale, 0, Math.PI * 2); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Transformed ellipse
+  const { a, b, c } = getABC(px, py);
+  const N = 100;
+
+  // Glow
+  ctx.strokeStyle = 'rgba(255,220,80,0.15)';
+  ctx.lineWidth = 5;
+  ctx.beginPath();
+  for (let i = 0; i <= N; i++) {
+    const theta = (i / N) * Math.PI * 2;
+    const ux = Math.cos(theta) * circR, uy = Math.sin(theta) * circR;
+    const [dx, dy] = w2s(px + a*ux + b*uy, py + b*ux + c*uy);
+    i === 0 ? ctx.moveTo(dx, dy) : ctx.lineTo(dx, dy);
+  }
+  ctx.stroke();
+
+  // Solid
+  ctx.strokeStyle = 'rgba(255,220,80,0.7)';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  for (let i = 0; i <= N; i++) {
+    const theta = (i / N) * Math.PI * 2;
+    const ux = Math.cos(theta) * circR, uy = Math.sin(theta) * circR;
+    const [dx, dy] = w2s(px + a*ux + b*uy, py + b*ux + c*uy);
+    i === 0 ? ctx.moveTo(dx, dy) : ctx.lineTo(dx, dy);
+  }
+  ctx.stroke();
+
+  // Eigenvectors at selected point
+  const { l1, l2, v1, v2 } = eigenDecomp(a, b, c);
+  const col = l => l >= 0 ? 'rgba(255,130,130,0.85)' : 'rgba(130,180,255,0.85)';
+  const eS = circR;
+  drawArrow(ctx, px, py, [v1[0]*l1*eS, v1[1]*l1*eS], 1, col(l1), 2);
+  drawArrow(ctx, px, py, [-v1[0]*l1*eS, -v1[1]*l1*eS], 1, col(l1), 2);
+  drawArrow(ctx, px, py, [v2[0]*l2*eS, v2[1]*l2*eS], 1, col(l2), 2);
+  drawArrow(ctx, px, py, [-v2[0]*l2*eS, -v2[1]*l2*eS], 1, col(l2), 2);
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Render (no OffscreenCanvas — direct draw with caching)
+// ═══════════════════════════════════════════════════════════════
+// We cache the static layers as a regular canvas element (broad compat)
+let cacheCanvas = document.createElement('canvas');
+let cacheCtx = cacheCanvas.getContext('2d');
+let cacheValid = false;
+
+function renderStaticLayers() {
+  const dpr = window.devicePixelRatio || 1;
+  cacheCanvas.width = canvas.width;
+  cacheCanvas.height = canvas.height;
+  cacheCtx.scale(dpr, dpr);
+
+  cacheCtx.fillStyle = '#0d0d14';
+  cacheCtx.fillRect(0, 0, canvas._dw, canvas._dh);
+
+  // Draw discriminant directly to main canvas first (putImageData needs it)
+  // then blit main to cache... actually let's just compose:
+  // For the discriminant we need putImageData which ignores transforms,
+  // so we do it on the cache canvas specially:
+  if (state.showDiscriminant) {
+    const key = `${canvas.width},${canvas.height},${state.strA},${state.strB},${state.strC},${state.viewRange}`;
+    if (state.discrimCacheKey !== key) {
+      state.discrimCache = computeDiscriminantImage();
+      state.discrimCacheKey = key;
+    }
+    // putImageData ignores transform, so reset first
+    cacheCtx.save();
+    cacheCtx.setTransform(1, 0, 0, 1, 0, 0);
+    cacheCtx.putImageData(state.discrimCache, 0, 0);
+    cacheCtx.restore();
+  }
+
+  // Now the rest uses the scaled context
+  if (state.showOrigGrid) {
+    // Draw on cache context
+    const range = state.viewRange;
+    cacheCtx.strokeStyle = 'rgba(255,255,255,0.07)';
+    cacheCtx.lineWidth = 0.5;
+    for (let i = -Math.floor(range); i <= Math.floor(range); i++) {
+      let [x1, y1] = w2s(i, -range); let [x2, y2] = w2s(i, range);
+      cacheCtx.beginPath(); cacheCtx.moveTo(x1, y1); cacheCtx.lineTo(x2, y2); cacheCtx.stroke();
+      [x1, y1] = w2s(-range, i); [x2, y2] = w2s(range, i);
+      cacheCtx.beginPath(); cacheCtx.moveTo(x1, y1); cacheCtx.lineTo(x2, y2); cacheCtx.stroke();
+    }
+  }
+
+  // Axes on cache
+  {
+    const range = state.viewRange;
+    cacheCtx.strokeStyle = 'rgba(255,255,255,0.18)';
+    cacheCtx.lineWidth = 1.2;
+    let [x1, y1] = w2s(-range, 0); let [x2, y2] = w2s(range, 0);
+    cacheCtx.beginPath(); cacheCtx.moveTo(x1, y1); cacheCtx.lineTo(x2, y2); cacheCtx.stroke();
+    [x1, y1] = w2s(0, -range); [x2, y2] = w2s(0, range);
+    cacheCtx.beginPath(); cacheCtx.moveTo(x1, y1); cacheCtx.lineTo(x2, y2); cacheCtx.stroke();
+    cacheCtx.fillStyle = 'rgba(255,255,255,0.25)';
+    cacheCtx.font = '10px JetBrains Mono';
+    cacheCtx.textAlign = 'center';
+    for (let i = -Math.floor(range); i <= Math.floor(range); i++) {
+      if (i === 0) continue;
+      const [tx, ty] = w2s(i, 0); cacheCtx.fillText(i, tx, ty + 13);
+      const [tx2, ty2] = w2s(0, i); cacheCtx.fillText(i, tx2 - 13, ty2 + 4);
+    }
+  }
+
+  // Transformed grid on cache
+  if (state.showXformGrid) {
+    const range = state.viewRange;
+    const steps = 40;
+    cacheCtx.strokeStyle = 'rgba(80,220,255,0.35)';
+    cacheCtx.lineWidth = 1.2;
+
+    for (let gx = -Math.floor(range); gx <= Math.floor(range); gx++) {
+      cacheCtx.beginPath();
+      for (let i = 0; i <= steps; i++) {
+        const y = -range + (2 * range * i) / steps;
+        const { a, b, c } = getABC(gx, y);
+        const tx = a * gx + b * y, ty = b * gx + c * y;
+        const [sx, sy] = w2s(tx, ty);
+        i === 0 ? cacheCtx.moveTo(sx, sy) : cacheCtx.lineTo(sx, sy);
+      }
+      cacheCtx.stroke();
+    }
+    for (let gy = -Math.floor(range); gy <= Math.floor(range); gy++) {
+      cacheCtx.beginPath();
+      for (let i = 0; i <= steps; i++) {
+        const x = -range + (2 * range * i) / steps;
+        const { a, b, c } = getABC(x, gy);
+        const tx = a * x + b * gy, ty = b * x + c * gy;
+        const [sx, sy] = w2s(tx, ty);
+        i === 0 ? cacheCtx.moveTo(sx, sy) : cacheCtx.lineTo(sx, sy);
+      }
+      cacheCtx.stroke();
+    }
+    cacheCtx.fillStyle = 'rgba(80,220,255,0.45)';
+    for (let gx = -Math.floor(range); gx <= Math.floor(range); gx++) {
+      for (let gy = -Math.floor(range); gy <= Math.floor(range); gy++) {
+        const { a, b, c } = getABC(gx, gy);
+        const [sx, sy] = w2s(a*gx + b*gy, b*gx + c*gy);
+        cacheCtx.beginPath(); cacheCtx.arc(sx, sy, 2.5, 0, Math.PI * 2); cacheCtx.fill();
+      }
+    }
+  }
+
+  // Eigenvectors on cache
+  if (state.showEigenvectors) {
+    const range = state.viewRange;
+    const arrowLen = 0.32;
+    for (let x = -Math.floor(range); x <= Math.floor(range); x++) {
+      for (let y = -Math.floor(range); y <= Math.floor(range); y++) {
+        const { a, b, c } = getABC(x, y);
+        const { l1, l2, v1, v2 } = eigenDecomp(a, b, c);
+        const c1 = l1 >= 0 ? 'rgba(255,100,100,0.65)' : 'rgba(100,160,255,0.65)';
+        const c2 = l2 >= 0 ? 'rgba(255,100,100,0.65)' : 'rgba(100,160,255,0.65)';
+        // Draw arrows on cache
+        const drawA = (ox, oy, dir, len, col) => {
+          const [sx2, sy2] = w2s(ox, oy);
+          const [ex, ey] = w2s(ox + dir[0]*len, oy + dir[1]*len);
+          cacheCtx.strokeStyle = col; cacheCtx.lineWidth = 1.5;
+          cacheCtx.beginPath(); cacheCtx.moveTo(sx2, sy2); cacheCtx.lineTo(ex, ey); cacheCtx.stroke();
+          const ang = Math.atan2(ey-sy2, ex-sx2);
+          cacheCtx.fillStyle = col; cacheCtx.beginPath();
+          cacheCtx.moveTo(ex, ey);
+          cacheCtx.lineTo(ex - 5*Math.cos(ang-0.4), ey - 5*Math.sin(ang-0.4));
+          cacheCtx.lineTo(ex - 5*Math.cos(ang+0.4), ey - 5*Math.sin(ang+0.4));
+          cacheCtx.closePath(); cacheCtx.fill();
+        };
+        drawA(x, y, v1, arrowLen, c1);
+        drawA(x, y, [-v1[0],-v1[1]], arrowLen, c1);
+        drawA(x, y, v2, arrowLen, c2);
+        drawA(x, y, [-v2[0],-v2[1]], arrowLen, c2);
+      }
+    }
+  }
+
+  cacheValid = true;
+}
+
+function draw() {
+  if (state.needsFullRedraw) {
+    renderStaticLayers();
+    state.needsFullRedraw = false;
+  }
+
+  const dpr = window.devicePixelRatio || 1;
+  // Blit cache to main canvas
+  ctx.save();
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.drawImage(cacheCanvas, 0, 0);
+  ctx.restore();
+
+  // Animated overlays
+  drawSelectedMarker();
+  if (state.showDeformation) drawUnitCircleDeformation();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Info Panel
+// ═══════════════════════════════════════════════════════════════
+function updateInfo() {
+  const { x, y } = state.selectedPoint;
+  const { a, b, c } = getABC(x, y);
+  const { l1, l2, det, discriminant } = eigenDecomp(a, b, c);
+
+  document.getElementById('info-point').textContent = `(${x.toFixed(2)}, ${y.toFixed(2)})`;
+  document.getElementById('info-det').textContent = det.toFixed(4);
+  document.getElementById('info-l1').textContent = l1.toFixed(4);
+  document.getElementById('info-l2').textContent = l2.toFixed(4);
+
+  const el = document.getElementById('info-disc');
+  el.textContent = discriminant.toFixed(4);
+  el.style.color = discriminant > 0.01 ? '#ff7070' : discriminant < -0.01 ? '#78b4ff' : '#60c878';
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Resize
+// ═══════════════════════════════════════════════════════════════
+function resize() {
+  const dpr = window.devicePixelRatio || 1;
+  const rect = canvas.parentElement.getBoundingClientRect();
+  canvas.width = Math.round(rect.width * dpr);
+  canvas.height = Math.round(rect.height * dpr);
+  ctx.scale(dpr, dpr);
+  canvas._dw = rect.width;
+  canvas._dh = rect.height;
+  state.needsFullRedraw = true;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Interaction
+// ═══════════════════════════════════════════════════════════════
+canvas.addEventListener('click', e => {
+  const rect = canvas.getBoundingClientRect();
+  const [x, y] = s2w(e.clientX - rect.left, e.clientY - rect.top);
+  state.selectedPoint = { x: Math.round(x * 10) / 10, y: Math.round(y * 10) / 10 };
+  updateInfo();
+});
+
+canvas.addEventListener('mousemove', e => {
+  const rect = canvas.getBoundingClientRect();
+  const [x, y] = s2w(e.clientX - rect.left, e.clientY - rect.top);
+  const { a, b, c } = getABC(x, y);
+  const disc = b*b - a*c;
+  const type = disc > 0.01 ? 'Hyperbolic' : disc < -0.01 ? 'Elliptic' : 'Parabolic';
+  tooltip.innerHTML = `(${x.toFixed(1)}, ${y.toFixed(1)})<br>a=${a.toFixed(2)}  b=${b.toFixed(2)}  c=${c.toFixed(2)}<br>${type}`;
+  tooltip.style.left = (e.clientX + 14) + 'px';
+  tooltip.style.top = (e.clientY + 14) + 'px';
+  tooltip.classList.add('visible');
+});
+canvas.addEventListener('mouseleave', () => tooltip.classList.remove('visible'));
+
+document.querySelector('.canvas-area').addEventListener('wheel', e => {
+  e.preventDefault();
+  state.viewRange = Math.max(1, Math.min(20, state.viewRange + e.deltaY * 0.005));
+  state.needsFullRedraw = true;
+}, { passive: false });
+
+// Debounced input handler (waits 150ms after last keystroke)
+let debounceTimer = null;
+function debouncedUpdate() {
+  clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(updateExpressions, 150);
+}
+
+inputA.addEventListener('input', debouncedUpdate);
+inputB.addEventListener('input', () => { inputB2.value = inputB.value; debouncedUpdate(); });
+inputC.addEventListener('input', debouncedUpdate);
+
+sliderA.addEventListener('input', () => {
+  const v = parseFloat(sliderA.value);
+  inputA.value = v; sliderAVal.textContent = v.toFixed(1); updateExpressions();
+});
+sliderB.addEventListener('input', () => {
+  const v = parseFloat(sliderB.value);
+  inputB.value = v; inputB2.value = v; sliderBVal.textContent = v.toFixed(1); updateExpressions();
+});
+sliderC.addEventListener('input', () => {
+  const v = parseFloat(sliderC.value);
+  inputC.value = v; sliderCVal.textContent = v.toFixed(1); updateExpressions();
+});
+
+document.getElementById('toggle-discrim').addEventListener('change', e => { state.showDiscriminant = e.target.checked; state.needsFullRedraw = true; });
+document.getElementById('toggle-eigen').addEventListener('change', e => { state.showEigenvectors = e.target.checked; state.needsFullRedraw = true; });
+document.getElementById('toggle-orig-grid').addEventListener('change', e => { state.showOrigGrid = e.target.checked; state.needsFullRedraw = true; });
+document.getElementById('toggle-xform-grid').addEventListener('change', e => { state.showXformGrid = e.target.checked; state.needsFullRedraw = true; });
+document.getElementById('toggle-deform').addEventListener('change', e => { state.showDeformation = e.target.checked; });
+
+// ═══════════════════════════════════════════════════════════════
+//  Animation Loop
+// ═══════════════════════════════════════════════════════════════
+let lastTime = 0;
+function animate(timestamp) {
+  state.animT += (timestamp - lastTime) / 1000;
+  lastTime = timestamp;
+  draw();
+  updateInfo();
+  requestAnimationFrame(animate);
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  Init
+// ═══════════════════════════════════════════════════════════════
+window.addEventListener('resize', resize);
+resize();
+updateExpressions();
+requestAnimationFrame(animate);
+
+})();
+</script>
+</body>
+</html>

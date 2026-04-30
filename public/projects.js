@@ -51,5 +51,19 @@ const PROJECTS = [
     category: "math",
     emoji: "〰️",
     folder: "characteristic-lines"
+  },
+  {
+    id: "matrix-transform",
+    title: "2×2 Matrix Transform",
+    category: "math",
+    emoji: "📐",
+    folder: "matrix-transform"
+  },
+  {
+    id: "finite-differences",
+    title: "Finite Differences",
+    category: "math",
+    emoji: "▦",
+    folder: "finite-differences"
   }
 ];
