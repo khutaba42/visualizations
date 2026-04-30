@@ -25,6 +25,9 @@
     --physics: #f472b6;
     --physics-glow: rgba(244, 114, 182, 0.4);
     --physics2: #fb923c;
+    --networks: #10b981;
+    --networks-glow: rgba(16, 185, 129, 0.4);
+    --networks2: #06b6d4;
     --topbar-bg: rgba(10, 10, 15, 0.82);
     --particle-color: 108, 138, 255;
     --sym-color: rgba(108, 138, 255, 0.18);
@@ -48,6 +51,9 @@
     --physics: #db2777;
     --physics-glow: rgba(219, 39, 119, 0.3);
     --physics2: #ea580c;
+    --networks: #059669;
+    --networks-glow: rgba(5, 150, 105, 0.3);
+    --networks2: #0891b2;
     --topbar-bg: rgba(244, 245, 247, 0.88);
     --particle-color: 79, 109, 245;
     --sym-color: rgba(79, 109, 245, 0.22);
@@ -592,13 +598,25 @@
     font-size: 4.05rem; /* ⚛ 2.25× base 1.8rem */
   }
 
+  .cat-icon.networks {
+    background: linear-gradient(135deg, var(--networks), var(--networks2));
+    box-shadow: 0 0 30px var(--networks-glow);
+  }
+
   .cat-card:hover .cat-icon.math { box-shadow: 0 0 45px var(--accent-glow); }
   .cat-card:hover .cat-icon.physics { box-shadow: 0 0 45px var(--physics-glow); }
+  .cat-card:hover .cat-icon.networks { box-shadow: 0 0 45px var(--networks-glow); }
 
   .cat-card[data-cat="physics"] {
     --card-glow: rgba(244, 114, 182, 0.06);
     --card-shadow: rgba(244, 114, 182, 0.08);
     --border-hover: rgba(244, 114, 182, 0.3);
+  }
+
+  .cat-card[data-cat="networks"] {
+    --card-glow: rgba(16, 185, 129, 0.06);
+    --card-shadow: rgba(16, 185, 129, 0.08);
+    --border-hover: rgba(16, 185, 129, 0.3);
   }
 
   .cat-label {
@@ -657,6 +675,11 @@
     font-size: 3.15rem; /* ⚛ 2.25× base 1.4rem */
   }
 
+  .section-icon.networks {
+    background: linear-gradient(135deg, var(--networks), var(--networks2));
+    box-shadow: 0 0 30px var(--networks-glow);
+  }
+
   .section-title {
     font-size: 1.8rem;
     font-weight: 700;
@@ -677,6 +700,13 @@
     background-clip: text;
   }
 
+  .section-title.networks-title {
+    background: linear-gradient(135deg, #fff, var(--networks));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
   body.light .section-title.math-title {
     background: linear-gradient(135deg, #1a1a2e, var(--accent));
     -webkit-background-clip: text;
@@ -685,6 +715,12 @@
 
   body.light .section-title.physics-title {
     background: linear-gradient(135deg, #1a1a2e, var(--physics));
+    -webkit-background-clip: text;
+    background-clip: text;
+  }
+
+  body.light .section-title.networks-title {
+    background: linear-gradient(135deg, #1a1a2e, var(--networks));
     -webkit-background-clip: text;
     background-clip: text;
   }
@@ -939,7 +975,7 @@
   </div>
   <div class="top-brand">
     <div class="top-title">Visualizations</div>
-    <div class="top-sub">Interactive explorations of math & physics</div>
+    <div class="top-sub">Interactive explorations of math, physics & networks</div>
   </div>
   <div class="top-spacer"></div>
   <div class="search-wrap top-search-wrap">
@@ -996,6 +1032,10 @@
       <div class="cat-icon physics">⚛</div>
       <div class="cat-label">Physics</div>
     </div>
+    <div class="cat-card c-stagger" data-cat="networks">
+      <div class="cat-icon networks">🌐</div>
+      <div class="cat-label">Networks</div>
+    </div>
   </div>
 </div>
 
@@ -1030,6 +1070,20 @@
     </div>
   </div>
 
+  <!-- ── NETWORKS SECTION ── -->
+  <div id="networks-section" class="hidden">
+    <div class="section-header p-stagger">
+      <div class="section-icon networks">🌐</div>
+      <h2 class="section-title networks-title">Networks</h2>
+    </div>
+    <div class="project-grid" id="networks-grid"></div>
+    <div class="empty-state" id="networks-empty">
+      <div class="empty-icon">🌐</div>
+      <div class="empty-title">Nothing here yet</div>
+      <div class="empty-sub">Network visualizations coming soon</div>
+    </div>
+  </div>
+
 </div>
 
 <script src="public/projects.js?v=2"></script>
@@ -1040,12 +1094,15 @@ const screens = {
   projects:   document.getElementById('projects'),
 };
 
-const mathSection    = document.getElementById('math-section');
-const physicsSection = document.getElementById('physics-section');
-const mathGrid       = document.getElementById('math-grid');
-const physicsGrid    = document.getElementById('physics-grid');
-const mathEmpty      = document.getElementById('math-empty');
-const physicsEmpty   = document.getElementById('physics-empty');
+const mathSection     = document.getElementById('math-section');
+const physicsSection  = document.getElementById('physics-section');
+const networksSection = document.getElementById('networks-section');
+const mathGrid        = document.getElementById('math-grid');
+const physicsGrid     = document.getElementById('physics-grid');
+const networksGrid    = document.getElementById('networks-grid');
+const mathEmpty       = document.getElementById('math-empty');
+const physicsEmpty    = document.getElementById('physics-empty');
+const networksEmpty   = document.getElementById('networks-empty');
 
 // Build a single project card element
 function createCard(project) {
@@ -1076,7 +1133,7 @@ function createCard(project) {
 }
 
 // Populate grids from the PROJECTS manifest (loaded via script tag)
-let mathCount = 0, physicsCount = 0;
+let mathCount = 0, physicsCount = 0, networksCount = 0;
 
 PROJECTS.forEach(p => {
   const card = createCard(p);
@@ -1086,12 +1143,16 @@ PROJECTS.forEach(p => {
   } else if (p.category === 'physics') {
     physicsGrid.appendChild(card);
     physicsCount++;
+  } else if (p.category === 'networks') {
+    networksGrid.appendChild(card);
+    networksCount++;
   }
 });
 
 // toggle empty states
-mathEmpty.style.display    = mathCount > 0 ? 'none' : '';
-physicsEmpty.style.display = physicsCount > 0 ? 'none' : '';
+mathEmpty.style.display     = mathCount > 0 ? 'none' : '';
+physicsEmpty.style.display  = physicsCount > 0 ? 'none' : '';
+networksEmpty.style.display = networksCount > 0 ? 'none' : '';
 
 // Trigger category stagger animations on page load
 screens.categories.querySelectorAll('.c-stagger').forEach(el => {
@@ -1114,8 +1175,8 @@ globalSearch.addEventListener('input', () => {
 
   // If inside a domain, filter that domain's grid directly
   if (activeScreen === 'projects' && activeCat) {
-    const grid  = activeCat === 'math' ? mathGrid : physicsGrid;
-    const empty = activeCat === 'math' ? mathEmpty : physicsEmpty;
+    const grid  = activeCat === 'math' ? mathGrid : activeCat === 'physics' ? physicsGrid : networksGrid;
+    const empty = activeCat === 'math' ? mathEmpty : activeCat === 'physics' ? physicsEmpty : networksEmpty;
     const cards = grid.querySelectorAll('.project-card');
     let visible = 0;
 
@@ -1131,7 +1192,7 @@ globalSearch.addEventListener('input', () => {
       empty.querySelector('.empty-title').textContent = 'No results';
       empty.querySelector('.empty-sub').textContent = `Nothing matching "${globalSearch.value.trim()}"`;
     } else {
-      const label = activeCat === 'math' ? 'Math' : 'Physics';
+      const label = activeCat === 'math' ? 'Math' : activeCat === 'physics' ? 'Physics' : 'Network';
       empty.querySelector('.empty-title').textContent = 'Nothing here yet';
       empty.querySelector('.empty-sub').textContent = `${label} visualizations coming soon`;
     }
@@ -1172,12 +1233,14 @@ function clearSearch() {
   globalResultsGrid.innerHTML = '';
   globalNoResults.classList.add('hidden');
   // restore card visibility in domain grids
-  [mathGrid, physicsGrid].forEach(grid => {
+  [mathGrid, physicsGrid, networksGrid].forEach(grid => {
     grid.querySelectorAll('.project-card').forEach(c => c.style.display = '');
   });
-  [mathEmpty, physicsEmpty].forEach((empty, i) => {
-    const grid = i === 0 ? mathGrid : physicsGrid;
-    const label = i === 0 ? 'Math' : 'Physics';
+  [
+    { empty: mathEmpty, grid: mathGrid, label: 'Math' },
+    { empty: physicsEmpty, grid: physicsGrid, label: 'Physics' },
+    { empty: networksEmpty, grid: networksGrid, label: 'Network' },
+  ].forEach(({ empty, grid, label }) => {
     empty.style.display = grid.querySelectorAll('.project-card').length > 0 ? 'none' : '';
     empty.querySelector('.empty-title').textContent = 'Nothing here yet';
     empty.querySelector('.empty-sub').textContent = `${label} visualizations coming soon`;
@@ -1221,8 +1284,9 @@ document.querySelectorAll('.cat-card').forEach(card => {
     transition(screens.categories, screens.projects, () => {
       mathSection.classList.toggle('hidden', cat !== 'math');
       physicsSection.classList.toggle('hidden', cat !== 'physics');
+      networksSection.classList.toggle('hidden', cat !== 'networks');
 
-      const activeSection = cat === 'math' ? mathSection : physicsSection;
+      const activeSection = cat === 'math' ? mathSection : cat === 'physics' ? physicsSection : networksSection;
       activeSection.querySelectorAll('.p-stagger').forEach(el => {
         el.classList.remove('animate');
         void el.offsetWidth;
@@ -1230,7 +1294,7 @@ document.querySelectorAll('.cat-card').forEach(card => {
     });
     activeScreen = 'projects';
     activeCat = cat;
-    globalSearch.placeholder = `Search ${cat === 'math' ? 'math' : 'physics'}…`;
+    globalSearch.placeholder = `Search ${cat === 'math' ? 'math' : cat === 'physics' ? 'physics' : 'networks'}…`;
   });
 
   card.addEventListener('mousemove', e => {
@@ -1381,7 +1445,7 @@ themeToggle.addEventListener('click', () => {
 // ═══════════ FLOATING SYMBOLS ═══════════
 (function() {
   const c = document.getElementById('bg-symbols');
-  const syms = ['∫','Σ','∂','π','∞','√','Δ','θ','λ','φ','ω','∇','ε','ζ','⚛','ℝ','ℂ','ℤ','∏','⊕'];
+  const syms = ['∫','Σ','∂','π','∞','√','Δ','θ','λ','φ','ω','∇','ε','ζ','⚛','ℝ','ℂ','ℤ','∏','⊕','⇆','⊞','⬡'];
 
   function spawn() {
     const el = document.createElement('span');
