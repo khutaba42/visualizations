@@ -1,0 +1,1214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Fourier Series — Function Approximation</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;500;600&family=Source+Serif+4:ital,wght@0,300;0,400;0,600;1,300&display=swap');
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: #0a0a0f;
+    color: #c8c8d0;
+    font-family: 'JetBrains Mono', monospace;
+    overflow: hidden;
+    height: 100vh;
+    display: flex;
+  }
+
+  .sidebar {
+    width: 360px; min-width: 360px; height: 100vh;
+    background: rgba(10,10,18,0.95);
+    backdrop-filter: blur(14px);
+    border-right: 1px solid rgba(255,255,255,0.06);
+    display: flex; flex-direction: column; z-index: 10; overflow-y: auto;
+  }
+  .sidebar::-webkit-scrollbar { width: 4px; }
+  .sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 2px; }
+
+  .sidebar-header { padding: 22px 26px 18px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+  .sidebar-header h1 { font-family: 'Source Serif 4', serif; font-weight: 300; font-size: 18px; color: #e8e8f0; margin-bottom: 3px; letter-spacing: 0.5px; }
+  .sidebar-header .subtitle { font-size: 11px; color: #666; font-weight: 300; }
+
+  .back-link { display: inline-block; font-size: 10px; color: #555; text-decoration: none; margin-bottom: 10px; letter-spacing: 1px; text-transform: uppercase; transition: color 0.2s; }
+  .back-link:hover { color: #6c8aff; }
+
+  .panel { padding: 18px 26px; border-bottom: 1px solid rgba(255,255,255,0.04); }
+  .panel:last-child { border-bottom: none; }
+
+  .section-title { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: #6c8aff; margin: 0 0 12px; }
+
+  .field { margin-bottom: 14px; }
+  .field:last-child { margin-bottom: 0; }
+  .field label { display: block; font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #666; margin-bottom: 6px; }
+  .field-value { float: right; font-size: 11px; color: #6c8aff; font-weight: 500; }
+
+  .field input[type="text"], .field input[type="number"] {
+    width: 100%; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+    color: #e8e8f0; font-family: 'JetBrains Mono', monospace; font-size: 12px;
+    padding: 9px 12px; border-radius: 6px; outline: none; transition: border-color 0.2s, background 0.2s;
+  }
+  .field input[type="text"]:focus, .field input[type="number"]:focus {
+    border-color: rgba(108,138,255,0.5); background: rgba(108,138,255,0.04);
+  }
+  .field input.invalid { border-color: rgba(248,113,113,0.5); background: rgba(248,113,113,0.04); }
+
+  .field input[type="range"] {
+    width: 100%; -webkit-appearance: none; appearance: none; height: 4px;
+    background: rgba(255,255,255,0.08); border-radius: 2px; outline: none;
+  }
+  .field input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 14px; height: 14px; border-radius: 50%;
+    background: #6c8aff; cursor: pointer; box-shadow: 0 0 8px rgba(108,138,255,0.4);
+  }
+  .field input[type="range"]::-moz-range-thumb {
+    width: 14px; height: 14px; border-radius: 50%; background: #6c8aff;
+    cursor: pointer; border: none; box-shadow: 0 0 8px rgba(108,138,255,0.4);
+  }
+
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  .n-row { display: grid; grid-template-columns: 1fr 70px; gap: 10px; align-items: center; }
+  .n-row input[type="number"] { padding: 7px 10px; text-align: center; font-size: 12px; }
+
+  .n-label-row {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 6px;
+  }
+  .n-label-text {
+    font-size: 10px; text-transform: uppercase; letter-spacing: 1px; color: #666;
+  }
+  .nm-display {
+    display: inline-flex; align-items: center; gap: 0;
+    font-size: 11px; font-weight: 500;
+  }
+  .nm-display #n-display { color: #6c8aff; min-width: 18px; text-align: right; }
+  .nm-display .slash { color: #555; margin: 0 5px; font-weight: 400; }
+  /* ID selectors win over .field input[type="number"] */
+  input#n-max {
+    width: 60px !important;
+    background: transparent !important;
+    border: 1px solid rgba(108,138,255,0.3) !important;
+    color: #6c8aff !important;
+    font-family: 'JetBrains Mono', monospace !important;
+    font-size: 11px !important;
+    font-weight: 500 !important;
+    padding: 2px 4px !important;
+    border-radius: 4px !important;
+    text-align: center !important;
+    outline: none !important;
+    -moz-appearance: textfield;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  input#n-max::-webkit-outer-spin-button,
+  input#n-max::-webkit-inner-spin-button {
+    -webkit-appearance: none; margin: 0;
+  }
+  input#n-max:focus, input#n-max:hover {
+    border-color: rgba(108,138,255,0.7) !important;
+    background: rgba(108,138,255,0.08) !important;
+  }
+
+  .n-stepper {
+    display: grid; grid-template-columns: auto auto 1fr auto auto;
+    gap: 6px; margin-top: 10px; align-items: center;
+  }
+  .n-stepper input[type="number"] {
+    width: 100%; text-align: center; padding: 8px 6px;
+    font-size: 13px; font-weight: 500; color: #e8e8f0;
+  }
+  .n-step {
+    padding: 8px 10px; font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+    color: #999; border-radius: 6px; cursor: pointer; transition: all 0.15s;
+    min-width: 38px; user-select: none;
+  }
+  .n-step:hover { border-color: rgba(108,138,255,0.5); color: #6c8aff; background: rgba(108,138,255,0.06); }
+  .n-step:active { transform: scale(0.95); background: rgba(108,138,255,0.12); }
+  .n-hint { font-size: 9px; color: #555; margin-top: 6px; line-height: 1.5; letter-spacing: 0.3px; }
+  .n-hint kbd { font-family: 'JetBrains Mono', monospace; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); padding: 0 4px; border-radius: 3px; color: #888; font-size: 9px; }
+
+  .preset-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-top: 6px; }
+  .preset-btn {
+    padding: 7px 8px; font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
+    color: #999; border-radius: 6px; cursor: pointer; transition: all 0.2s;
+    text-align: left;
+  }
+  .preset-btn:hover { border-color: rgba(108,138,255,0.4); color: #c8c8d0; background: rgba(108,138,255,0.05); }
+  .preset-btn .pn { color: #6c8aff; font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; display: block; margin-bottom: 2px; }
+
+  .interval-row { display: grid; grid-template-columns: 1fr auto 1fr; gap: 8px; align-items: center; }
+  .interval-row .dash { color: #555; font-size: 11px; text-align: center; }
+  .interval-row input { text-align: center; }
+
+  .quick-bounds { display: flex; gap: 6px; margin-top: 8px; flex-wrap: wrap; }
+  .qb-btn {
+    flex: 1; padding: 5px 8px; font-family: 'JetBrains Mono', monospace; font-size: 10px;
+    background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08);
+    color: #888; border-radius: 5px; cursor: pointer; transition: all 0.2s;
+  }
+  .qb-btn:hover { border-color: rgba(108,138,255,0.3); color: #c8c8d0; }
+
+  .info-box {
+    background: rgba(108,138,255,0.05); border: 1px solid rgba(108,138,255,0.12);
+    border-radius: 8px; padding: 12px 14px; font-size: 11px; line-height: 1.6;
+    color: #999; margin-top: 6px;
+  }
+  .info-box .formula {
+    font-family: 'Source Serif 4', serif; font-style: italic; color: #b8b8c8;
+    font-size: 13px; display: block; text-align: center; margin: 6px 0;
+  }
+  .info-box strong { color: #b0b0c0; font-weight: 500; }
+  .info-box code { background: rgba(255,255,255,0.06); padding: 1px 5px; border-radius: 3px; color: #b8b8c8; font-family: 'JetBrains Mono', monospace; font-size: 10.5px; }
+
+  .legend { display: flex; flex-direction: column; gap: 6px; margin-top: 6px; }
+  .legend-item { display: flex; align-items: center; gap: 8px; font-size: 11px; color: #999; }
+  .legend-line { width: 20px; height: 2px; border-radius: 1px; flex-shrink: 0; }
+
+  .checkbox-field { display: flex; align-items: center; gap: 8px; margin: 6px 0; cursor: pointer; font-size: 11px; color: #999; }
+  .checkbox-field input[type="checkbox"] { accent-color: #6c8aff; width: 14px; height: 14px; cursor: pointer; }
+
+  .err-msg { color: #f87171; font-size: 10px; margin-top: 5px; min-height: 12px; line-height: 1.4; }
+
+  .canvas-area { flex: 1; height: 100vh; position: relative; overflow: hidden; }
+  canvas#plot { display: block; width: 100%; height: 100%; cursor: grab; }
+  canvas#plot.dragging { cursor: grabbing; }
+
+  .topbar { position: absolute; top: 16px; left: 16px; z-index: 5; display: flex; gap: 8px; }
+  .reset-btn {
+    padding: 9px 14px; background: rgba(10,10,20,0.85); backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.08); border-radius: 8px;
+    color: #c8c8d0; font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    text-transform: uppercase; letter-spacing: 1px; cursor: pointer; transition: all 0.2s;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .reset-btn:hover { border-color: rgba(108,138,255,0.4); color: #6c8aff; }
+  .reset-btn svg { width: 12px; height: 12px; stroke: currentColor; fill: none; stroke-width: 1.8; }
+
+  .nav-hint {
+    position: absolute; bottom: 16px; left: 16px; z-index: 5;
+    font-size: 10px; color: #555; line-height: 1.6;
+    background: rgba(10,10,20,0.6); border: 1px solid rgba(255,255,255,0.04);
+    border-radius: 6px; padding: 7px 11px;
+    pointer-events: none;
+  }
+  .nav-hint kbd {
+    font-family: 'JetBrains Mono', monospace; font-size: 9px;
+    background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1);
+    padding: 1px 5px; border-radius: 3px; color: #888;
+  }
+
+  .stats-overlay {
+    position: absolute; top: 16px; right: 16px; z-index: 5;
+    background: rgba(10,10,20,0.85); backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.08); border-radius: 8px;
+    padding: 12px 16px; font-size: 11px; color: #c8c8d0; min-width: 180px;
+  }
+  .stats-overlay .row { display: flex; justify-content: space-between; padding: 3px 0; gap: 14px; }
+  .stats-overlay .lbl { color: #666; }
+  .stats-overlay .val { color: #6c8aff; font-weight: 500; }
+
+  .coeffs-overlay {
+    position: absolute; bottom: 16px; right: 16px; z-index: 5;
+    background: rgba(10,10,20,0.88); backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.08); border-radius: 8px;
+    padding: 10px 14px; font-size: 10px; color: #c8c8d0;
+    max-height: 240px; overflow-y: auto; max-width: 280px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .coeffs-overlay::-webkit-scrollbar { width: 3px; }
+  .coeffs-overlay::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.15); border-radius: 2px; }
+  .coeffs-overlay .ch { color: #6c8aff; text-transform: uppercase; letter-spacing: 1px; font-size: 9px; margin-bottom: 6px; }
+  .coeffs-overlay table { border-collapse: collapse; width: 100%; }
+  .coeffs-overlay td { padding: 2px 8px 2px 0; }
+  .coeffs-overlay .idx { color: #555; }
+  .coeffs-overlay .coef-name { color: #888; }
+  .coeffs-overlay .coef-val { color: #c8c8d0; text-align: right; }
+
+  .play-btn {
+    padding: 9px 16px; background: rgba(10,10,20,0.85); backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.08); border-radius: 8px;
+    color: #c8c8d0; font-family: 'JetBrains Mono', monospace; font-size: 11px;
+    text-transform: uppercase; letter-spacing: 1px; cursor: pointer; transition: all 0.2s;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .play-btn:hover { border-color: rgba(108,138,255,0.4); color: #6c8aff; }
+  .play-btn.playing { color: #6c8aff; border-color: rgba(108,138,255,0.4); }
+
+  @media (max-width: 880px) {
+    body { flex-direction: column; overflow: auto; }
+    .sidebar { width: 100%; min-width: 0; height: auto; }
+    .canvas-area { height: 70vh; }
+  }
+</style>
+</head>
+<body>
+
+<aside class="sidebar">
+  <div class="sidebar-header">
+    <a href="../../../index.html" class="back-link">← back</a>
+    <h1>Fourier Series</h1>
+    <div class="subtitle">Approximation of f(x) on [a, b]</div>
+  </div>
+
+  <div class="panel">
+    <div class="section-title">Function f(x)</div>
+    <div class="field">
+      <input type="text" id="fn-input" value="x" autocomplete="off" spellcheck="false" placeholder="e.g. sin(x) + 0.5*cos(3*x)">
+      <div class="err-msg" id="fn-err"></div>
+    </div>
+    <div class="preset-grid">
+      <button type="button" class="preset-btn" data-fn="x"><span class="pn">Linear / Sawtooth</span>x</button>
+      <button type="button" class="preset-btn" data-fn="x*x"><span class="pn">Parabola</span>x²</button>
+      <button type="button" class="preset-btn" data-fn="x*x*x"><span class="pn">Cubic</span>x³</button>
+      <button type="button" class="preset-btn" data-fn="abs(x)"><span class="pn">V-shape</span>|x|</button>
+      <button type="button" class="preset-btn" data-fn="sign(x)"><span class="pn">Sign</span>sign(x)</button>
+      <button type="button" class="preset-btn" data-fn="(x>0)?1:0"><span class="pn">Step</span>H(x)</button>
+      <button type="button" class="preset-btn" data-fn="(abs(x)<1)?1:0"><span class="pn">Indicator</span>1<sub>|x|&lt;1</sub></button>
+      <button type="button" class="preset-btn" data-fn="pi/2-abs(x)"><span class="pn">Triangle</span>π/2−|x|</button>
+      <button type="button" class="preset-btn" data-fn="sin(x)"><span class="pn">Sin</span>sin(x)</button>
+      <button type="button" class="preset-btn" data-fn="cos(x)"><span class="pn">Cos</span>cos(x)</button>
+      <button type="button" class="preset-btn" data-fn="exp(x)"><span class="pn">Exp</span>eˣ</button>
+      <button type="button" class="preset-btn" data-fn="exp(-x*x)"><span class="pn">Gaussian</span>e<sup>−x²</sup></button>
+      <button type="button" class="preset-btn" data-fn="log(abs(x)+1)"><span class="pn">Log</span>ln(|x|+1)</button>
+      <button type="button" class="preset-btn" data-fn="sqrt(abs(x))"><span class="pn">Sqrt</span>√|x|</button>
+      <button type="button" class="preset-btn" data-fn="1/(abs(x)+0.1)"><span class="pn">Reciprocal</span>1/(|x|+0.1)</button>
+      <button type="button" class="preset-btn" data-fn="tanh(x)"><span class="pn">Tanh</span>tanh(x)</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="section-title">Number of Terms (N)</div>
+    <div class="field">
+      <div class="n-label-row">
+        <span class="n-label-text">Terms</span>
+        <span class="nm-display">
+          <span id="n-display">10</span><span class="slash">/</span><input type="number" id="n-max" value="500" min="1" step="1" title="Slider maximum (editable)">
+        </span>
+      </div>
+      <input type="range" id="n-slider" min="0" max="500" step="1" value="10" style="width:100%">
+      <div class="n-stepper">
+        <button type="button" class="n-step" data-d="-10" title="Decrease by 10">−10</button>
+        <button type="button" class="n-step" data-d="-1" title="Decrease by 1">−1</button>
+        <input type="number" id="n-number" min="0" step="1" value="10">
+        <button type="button" class="n-step" data-d="1" title="Increase by 1">+1</button>
+        <button type="button" class="n-step" data-d="10" title="Increase by 10">+10</button>
+      </div>
+      <div class="n-hint">
+        Type any N ≥ 0 · slider auto-grows · <kbd>←</kbd>/<kbd>→</kbd> on canvas (with <kbd>shift</kbd> = ±10)
+      </div>
+    </div>
+    <label class="checkbox-field">
+      <input type="checkbox" id="show-partials"> Show terms 1…N as faint curves
+    </label>
+  </div>
+
+  <div class="panel">
+    <div class="section-title">Interval [a, b]</div>
+    <div class="field">
+      <div class="interval-row">
+        <input type="text" id="a-input" value="-pi">
+        <span class="dash">→</span>
+        <input type="text" id="b-input" value="pi">
+      </div>
+      <div class="err-msg" id="ab-err"></div>
+    </div>
+    <div class="quick-bounds">
+      <button type="button" class="qb-btn" data-a="-pi" data-b="pi">±π</button>
+      <button type="button" class="qb-btn" data-a="-1" data-b="1">±1</button>
+      <button type="button" class="qb-btn" data-a="0" data-b="2*pi">[0, 2π]</button>
+      <button type="button" class="qb-btn" data-a="-2*pi" data-b="2*pi">±2π</button>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="section-title">Display</div>
+    <label class="checkbox-field">
+      <input type="checkbox" id="periodic-extension" checked> Show periodic extension
+    </label>
+    <label class="checkbox-field">
+      <input type="checkbox" id="show-coeffs" checked> Show coefficient table
+    </label>
+    <div class="legend">
+      <div class="legend-item"><div class="legend-line" style="background:#6c8aff"></div>Fourier sum S<sub>N</sub>(x)</div>
+      <div class="legend-item"><div class="legend-line" style="background:#f0a060"></div>Original f(x)</div>
+      <div class="legend-item"><div class="legend-line" style="background:rgba(255,255,255,0.18)"></div>Axes / period markers</div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="section-title">About</div>
+    <div class="info-box">
+      Period <strong>L = b − a</strong>. The series is
+      <span class="formula">S<sub>N</sub>(x) = a₀/2 + Σ[a<sub>n</sub>cos(nωx) + b<sub>n</sub>sin(nωx)]</span>
+      with ω = 2π/L and coefficients computed by numerical integration of f over [a, b].
+      <br><br>
+      <strong>Supported in f(x):</strong><br>
+      <em>Trig:</em> sin, cos, tan, asin, acos, atan, atan2<br>
+      <em>Hyperbolic:</em> sinh, cosh, tanh<br>
+      <em>Exp / log:</em> exp, log, log2, log10<br>
+      <em>Roots:</em> sqrt, cbrt<br>
+      <em>Numeric:</em> abs, sign, floor, ceil, round, min, max, pow<br>
+      <em>Constants:</em> pi, e<br>
+      <em>Operators:</em> + − × / % <strong>^</strong> ( ) &lt; &gt; &lt;= &gt;= == != ?: &amp;&amp; ||
+      <br><br>
+      Indicator functions like <code>(abs(x)&lt;1)?1:0</code> are supported via the ternary <code>?:</code> operator.
+    </div>
+  </div>
+</aside>
+
+<main class="canvas-area">
+  <canvas id="plot"></canvas>
+  <div class="topbar">
+    <button class="play-btn" id="play-btn">▶ Animate N</button>
+    <button class="reset-btn" id="reset-view-btn" title="Reset view">
+      <svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7L21 8M21 3v5h-5"/></svg>
+      Reset View
+    </button>
+  </div>
+  <div class="nav-hint">
+    <kbd>drag</kbd> pan &nbsp;·&nbsp; <kbd>scroll</kbd> zoom &nbsp;·&nbsp; <kbd>shift</kbd>+scroll = x only &nbsp;·&nbsp; <kbd>alt/option</kbd>+scroll = y only
+  </div>
+  <div class="stats-overlay" id="stats">
+    <div class="row"><span class="lbl">N</span><span class="val" id="stat-n">10</span></div>
+    <div class="row"><span class="lbl">period L</span><span class="val" id="stat-L">2π</span></div>
+    <div class="row"><span class="lbl">L² error</span><span class="val" id="stat-err">—</span></div>
+    <div class="row"><span class="lbl">max error</span><span class="val" id="stat-max">—</span></div>
+  </div>
+  <div class="coeffs-overlay" id="coeffs"></div>
+</main>
+
+<script>
+/* ────────────────────────────────────────────────────────────────
+ * Safe-ish expression compiler. Allows letters, digits, operators
+ * and a whitelist of Math functions / constants. ^ is rewritten to **.
+ * Returns f(x) -> number, or throws a parse error.
+ * ──────────────────────────────────────────────────────────────── */
+const ALLOWED_NAMES = ['sin','cos','tan','asin','acos','atan','atan2',
+  'sinh','cosh','tanh','exp','log','log2','log10','sqrt','cbrt',
+  'abs','sign','floor','ceil','round','min','max','pow','pi','e','PI','E'];
+
+function compileFn(src) {
+  if (!src || !src.trim()) throw new Error('empty function');
+  // rewrite ^ to **
+  let s = src.replace(/\^/g, '**');
+  // Strip valid comparison/exponent operators before checking for bare =
+  const scrubbed = s
+    .replace(/===|!==/g, ' ')
+    .replace(/==|!=|<=|>=/g, ' ')
+    .replace(/\*\*/g, ' ');
+  if (/=>/.test(scrubbed))  throw new Error('arrow functions not allowed');
+  if (/=/.test(scrubbed))   throw new Error('assignment not allowed');
+  const bad = /[;`\[\]{}$]|\b(window|document|global|this|function|return|var|let|const|new|await|async|class|import)\b/;
+  if (bad.test(s)) throw new Error('disallowed token');
+  // collect identifiers and verify
+  const ids = s.match(/[a-zA-Z_][a-zA-Z0-9_]*/g) || [];
+  for (const id of ids) {
+    if (id === 'x') continue;
+    if (!ALLOWED_NAMES.includes(id)) throw new Error('unknown name: ' + id);
+  }
+  // build with Math destructuring
+  const body = `
+    const {sin,cos,tan,asin,acos,atan,atan2,sinh,cosh,tanh,
+           exp,log,log2,log10,sqrt,cbrt,abs,sign,floor,ceil,round,min,max,pow,PI,E} = Math;
+    const pi = PI, e = E;
+    return (${s});
+  `;
+  // eslint-disable-next-line no-new-func
+  const fn = new Function('x', body);
+  // smoke-test
+  const probe = fn(0);
+  if (typeof probe !== 'number' || !isFinite(probe) && !isNaN(probe)) {
+    // we still allow Infinity / NaN at single points; just sanity-check that fn returns a number type
+    if (typeof probe !== 'number') throw new Error('did not return a number');
+  }
+  return fn;
+}
+
+function parseScalar(src) {
+  if (src == null || !String(src).trim()) throw new Error('empty');
+  const s = String(src).replace(/\^/g, '**');
+  const scrubbed = s.replace(/===|!==/g,' ').replace(/==|!=|<=|>=/g,' ').replace(/\*\*/g,' ');
+  if (/=>/.test(scrubbed) || /=/.test(scrubbed)) throw new Error('assignment not allowed');
+  const ids = s.match(/[a-zA-Z_][a-zA-Z0-9_]*/g) || [];
+  for (const id of ids) if (!ALLOWED_NAMES.includes(id)) throw new Error('unknown name');
+  // eslint-disable-next-line no-new-func
+  const v = new Function(`
+    const {sin,cos,tan,asin,acos,atan,sinh,cosh,tanh,exp,log,sqrt,abs,sign,floor,ceil,round,min,max,pow,PI,E}=Math;
+    const pi=PI,e=E;
+    return (${s});
+  `)();
+  if (typeof v !== 'number' || !isFinite(v)) throw new Error('not a finite number');
+  return v;
+}
+
+/* ────────────────────────────────────────────────────────────────
+ * Fourier coefficients via composite Simpson's rule.
+ * For period L = b-a, ω = 2π/L.
+ *   a_n = (2/L) ∫_a^b f(x) cos(n ω x) dx
+ *   b_n = (2/L) ∫_a^b f(x) sin(n ω x) dx
+ * ──────────────────────────────────────────────────────────────── */
+function simpson(g, a, b, M) {
+  // M must be even
+  if (M % 2) M++;
+  const h = (b - a) / M;
+  let s = g(a) + g(b);
+  for (let i = 1; i < M; i++) {
+    const x = a + i * h;
+    s += g(x) * (i % 2 === 0 ? 2 : 4);
+  }
+  return s * h / 3;
+}
+
+function safeEval(fn, x) {
+  let v;
+  try { v = fn(x); } catch { return 0; }
+  if (typeof v !== 'number' || !isFinite(v)) return 0;
+  return v;
+}
+
+function computeFourier(fn, a, b, N) {
+  const L = b - a;
+  const w = 2 * Math.PI / L;
+  // pick number of integration points: more for higher N to resolve oscillation
+  const M = Math.max(400, 40 * (N + 1));
+  // a_0
+  const a0 = (2 / L) * simpson(x => safeEval(fn, x), a, b, M);
+  const an = new Array(N + 1).fill(0);
+  const bn = new Array(N + 1).fill(0);
+  an[0] = a0; bn[0] = 0;
+  for (let n = 1; n <= N; n++) {
+    an[n] = (2 / L) * simpson(x => safeEval(fn, x) * Math.cos(n * w * x), a, b, M);
+    bn[n] = (2 / L) * simpson(x => safeEval(fn, x) * Math.sin(n * w * x), a, b, M);
+  }
+  return { an, bn, L, w };
+}
+
+function fourierEval(coef, x) {
+  const { an, bn, w } = coef;
+  let s = an[0] / 2;
+  for (let n = 1; n < an.length; n++) {
+    s += an[n] * Math.cos(n * w * x) + bn[n] * Math.sin(n * w * x);
+  }
+  return s;
+}
+
+/* ────────────────────────────────────────────────────────────────
+ *  UI + plotting
+ * ──────────────────────────────────────────────────────────────── */
+const canvas = document.getElementById('plot');
+const ctx = canvas.getContext('2d');
+
+const fnInput = document.getElementById('fn-input');
+const fnErr = document.getElementById('fn-err');
+const aInput = document.getElementById('a-input');
+const bInput = document.getElementById('b-input');
+const abErr = document.getElementById('ab-err');
+const nSlider = document.getElementById('n-slider');
+const nNumber = document.getElementById('n-number');
+const nMax = document.getElementById('n-max');
+const nDisplay = document.getElementById('n-display');
+const periodicChk = document.getElementById('periodic-extension');
+const showCoeffsChk = document.getElementById('show-coeffs');
+const showPartialsChk = document.getElementById('show-partials');
+const playBtn = document.getElementById('play-btn');
+const resetViewBtn = document.getElementById('reset-view-btn');
+const coeffsBox = document.getElementById('coeffs');
+
+const statN = document.getElementById('stat-n');
+const statL = document.getElementById('stat-L');
+const statErr = document.getElementById('stat-err');
+const statMax = document.getElementById('stat-max');
+
+const PAD_L = 56, PAD_R = 30, PAD_T = 30, PAD_B = 50;
+
+let state = {
+  fn: x => x,
+  a: -Math.PI,
+  b: Math.PI,
+  N: 10,
+  coef: null,
+  view: null,        // {xLo, xHi, yLo, yHi}
+  samples: null,     // {xs, fy, sy, partials}
+};
+
+let playing = false;
+let playTimer = null;
+
+function fmt(v, p = 4) {
+  if (!isFinite(v)) return '∞';
+  if (Math.abs(v) < 1e-10) return '0';
+  return Number(v.toFixed(p)).toString();
+}
+
+function recompileFn() {
+  try {
+    state.fn = compileFn(fnInput.value);
+    fnInput.classList.remove('invalid');
+    fnErr.textContent = '';
+    return true;
+  } catch (e) {
+    fnInput.classList.add('invalid');
+    fnErr.textContent = 'function error: ' + e.message;
+    return false;
+  }
+}
+
+function recomputeBounds() {
+  try {
+    const a = parseScalar(aInput.value);
+    const b = parseScalar(bInput.value);
+    if (b <= a) throw new Error('require b > a');
+    state.a = a; state.b = b;
+    aInput.classList.remove('invalid');
+    bInput.classList.remove('invalid');
+    abErr.textContent = '';
+    return true;
+  } catch (e) {
+    aInput.classList.add('invalid');
+    bInput.classList.add('invalid');
+    abErr.textContent = 'bounds error: ' + e.message;
+    return false;
+  }
+}
+
+function fourierEvalUpTo(coef, x, N) {
+  const { an, bn, w } = coef;
+  let s = an[0] / 2;
+  const lim = Math.min(N, an.length - 1);
+  for (let n = 1; n <= lim; n++) {
+    s += an[n] * Math.cos(n * w * x) + bn[n] * Math.sin(n * w * x);
+  }
+  return s;
+}
+
+function evalF(x) {
+  const L = state.b - state.a;
+  if (x >= state.a && x <= state.b) return safeEval(state.fn, x);
+  if (!periodicChk.checked) return NaN;     // hide outside if no periodic extension
+  const xf = ((x - state.a) % L + L) % L + state.a;
+  return safeEval(state.fn, xf);
+}
+
+function ensureCoef() {
+  const need = Math.max(state.N, 1);
+  if (!state.coef || state.coef.an.length - 1 < need) {
+    state.coef = computeFourier(state.fn, state.a, state.b, need);
+  }
+}
+
+/* Resample f(x) and S_N(x) over the current view (with margin). */
+function resample() {
+  if (!state.view) return;
+  const v = state.view;
+  const W = canvas.clientWidth;
+  const Npts = Math.max(1200, Math.min(3000, Math.floor(W * 1.8)));
+  const margin = (v.xHi - v.xLo) * 0.15;     // small buffer for smooth scrolling
+  const xLo = v.xLo - margin, xHi = v.xHi + margin;
+  const xs = new Float64Array(Npts);
+  const fy = new Float64Array(Npts);
+  const sy = new Float64Array(Npts);
+  for (let i = 0; i < Npts; i++) {
+    const x = xLo + (xHi - xLo) * (i / (Npts - 1));
+    xs[i] = x;
+    fy[i] = evalF(x);
+    sy[i] = fourierEvalUpTo(state.coef, x, state.N);
+  }
+  let partials = null;
+  if (showPartialsChk.checked && state.N > 0) {
+    partials = [];
+    const targetCount = Math.min(state.N, 8);
+    const stride = Math.max(1, Math.floor(state.N / targetCount));
+    for (let k = stride; k <= state.N; k += stride) {
+      const yp = new Float64Array(Npts);
+      for (let i = 0; i < Npts; i++) yp[i] = fourierEvalUpTo(state.coef, xs[i], k);
+      partials.push({ ys: yp, k });
+    }
+  }
+  state.samples = { xs, fy, sy, partials };
+}
+
+/* Auto-fit view to natural domain + observed y-range. */
+function autoFitView() {
+  ensureCoef();
+  const L = state.b - state.a;
+  const showPeriodic = periodicChk.checked;
+  const xLo = showPeriodic ? state.a - L : state.a;
+  const xHi = showPeriodic ? state.b + L : state.b;
+
+  // probe y-range using both f and S_N
+  const probeN = 800;
+  let yMin = Infinity, yMax = -Infinity;
+  for (let i = 0; i < probeN; i++) {
+    const x = xLo + (xHi - xLo) * (i / (probeN - 1));
+    const yf = evalF(x);
+    const ys = fourierEvalUpTo(state.coef, x, state.N);
+    if (isFinite(yf)) { if (yf < yMin) yMin = yf; if (yf > yMax) yMax = yf; }
+    if (isFinite(ys)) { if (ys < yMin) yMin = ys; if (ys > yMax) yMax = ys; }
+  }
+  if (!isFinite(yMin) || !isFinite(yMax) || yMin === yMax) { yMin = -1; yMax = 1; }
+  const pad = (yMax - yMin) * 0.15 + 1e-9;
+  state.view = { xLo, xHi, yLo: yMin - pad, yHi: yMax + pad };
+  resample();
+}
+
+/* Recompute coefficients (e.g. after fn or [a,b] changed) and refit. */
+function rebuildAndFit() {
+  state.N = +nNumber.value | 0;
+  state.coef = computeFourier(state.fn, state.a, state.b, Math.max(state.N, 1));
+  autoFitView();
+  updateOverlays();
+  draw();
+}
+
+/* N changed: reuse cached coefficients (recomputing if needed) and resample within current view. */
+function nChanged(n) {
+  state.N = (n != null) ? (n | 0) : (+nNumber.value | 0);
+  ensureCoef();
+  if (!state.view) autoFitView(); else resample();
+  updateOverlays();
+  draw();
+}
+
+function updateOverlays() {
+  statN.textContent = state.N;
+  const L = state.b - state.a;
+  const Lpi = L / Math.PI;
+  const Lstr = (Math.abs(Lpi - Math.round(Lpi)) < 1e-3 && Math.abs(Lpi) > 0.5)
+    ? `${Math.round(Lpi)}π` : fmt(L, 3);
+  statL.textContent = Lstr;
+
+  // probe error inside [a,b] independent of viewport sampling
+  const M = 800;
+  let err2 = 0, errMax = 0;
+  for (let i = 0; i < M; i++) {
+    const x = state.a + (state.b - state.a) * (i / (M - 1));
+    const fv = safeEval(state.fn, x);
+    const sv = fourierEvalUpTo(state.coef, x, state.N);
+    const d = fv - sv;
+    err2 += d * d;
+    if (Math.abs(d) > errMax) errMax = Math.abs(d);
+  }
+  err2 = Math.sqrt(err2 / M);
+  statErr.textContent = fmt(err2, 4);
+  statMax.textContent = fmt(errMax, 4);
+
+  if (showCoeffsChk.checked) {
+    coeffsBox.style.display = 'block';
+    const c = state.coef;
+    let html = `<div class="ch">Coefficients (N=${state.N})</div><table>`;
+    html += `<tr><td class="idx">n=0</td><td class="coef-name">a₀/2</td><td class="coef-val">${fmt(c.an[0]/2,5)}</td></tr>`;
+    const lim = Math.min(state.N, c.an.length - 1);
+    for (let n = 1; n <= lim; n++) {
+      html += `<tr><td class="idx">n=${n}</td><td class="coef-name">aₙ</td><td class="coef-val">${fmt(c.an[n],5)}</td><td class="coef-name">bₙ</td><td class="coef-val">${fmt(c.bn[n],5)}</td></tr>`;
+    }
+    html += '</table>';
+    coeffsBox.innerHTML = html;
+  } else {
+    coeffsBox.style.display = 'none';
+  }
+}
+
+/* ──── Plot ──── */
+function draw() {
+  if (!state.samples || !state.view) return;
+  const dpr = window.devicePixelRatio || 1;
+  const W = canvas.clientWidth, H = canvas.clientHeight;
+  if (canvas.width !== W * dpr || canvas.height !== H * dpr) {
+    canvas.width = W * dpr; canvas.height = H * dpr;
+  }
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, W, H);
+
+  const v = state.view;
+  const xLo = v.xLo, xHi = v.xHi, yMin = v.yLo, yMax = v.yHi;
+  const padL = PAD_L, padR = PAD_R, padT = PAD_T, padB = PAD_B;
+  const plotW = W - padL - padR;
+  const plotH = H - padT - padB;
+  const X = x => padL + ((x - xLo) / (xHi - xLo)) * plotW;
+  const Y = y => padT + (1 - (y - yMin) / (yMax - yMin)) * plotH;
+
+  // background panel
+  ctx.fillStyle = 'rgba(255,255,255,0.015)';
+  ctx.fillRect(padL, padT, plotW, plotH);
+
+  // soft tint for the [a,b] band so the focus is obvious
+  const aPx = Math.max(X(state.a), padL);
+  const bPx = Math.min(X(state.b), padL + plotW);
+  if (bPx > aPx) {
+    ctx.fillStyle = 'rgba(108,138,255,0.05)';
+    ctx.fillRect(aPx, padT, bPx - aPx, plotH);
+  }
+
+  // gridlines
+  ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+  ctx.lineWidth = 1;
+  const xTicks = niceXTicks(xLo, xHi);
+  ctx.font = '11px JetBrains Mono';
+  ctx.fillStyle = '#666';
+  ctx.textAlign = 'center';
+  for (const t of xTicks) {
+    const x = X(t.v);
+    if (x < padL - 1 || x > padL + plotW + 1) continue;
+    ctx.beginPath(); ctx.moveTo(x, padT); ctx.lineTo(x, padT + plotH); ctx.stroke();
+    ctx.fillText(t.label, x, padT + plotH + 16);
+  }
+  const yTicks = niceLinearTicks(yMin, yMax, 6);
+  ctx.textAlign = 'right';
+  for (const tv of yTicks) {
+    const y = Y(tv);
+    if (y < padT - 1 || y > padT + plotH + 1) continue;
+    ctx.beginPath(); ctx.moveTo(padL, y); ctx.lineTo(padL + plotW, y); ctx.stroke();
+    ctx.fillText(fmt(tv, 3), padL - 8, y + 4);
+  }
+
+  // axes
+  ctx.strokeStyle = 'rgba(255,255,255,0.18)';
+  ctx.lineWidth = 1;
+  if (xLo < 0 && xHi > 0) {
+    const x0 = X(0);
+    ctx.beginPath(); ctx.moveTo(x0, padT); ctx.lineTo(x0, padT + plotH); ctx.stroke();
+  }
+  if (yMin < 0 && yMax > 0) {
+    const y0 = Y(0);
+    ctx.beginPath(); ctx.moveTo(padL, y0); ctx.lineTo(padL + plotW, y0); ctx.stroke();
+  }
+
+  // period markers (a, b)
+  ctx.strokeStyle = 'rgba(108,138,255,0.55)';
+  ctx.setLineDash([4, 4]);
+  ctx.lineWidth = 1;
+  for (const xv of [state.a, state.b]) {
+    const x = X(xv);
+    if (x >= padL - 1 && x <= padL + plotW + 1) {
+      ctx.beginPath(); ctx.moveTo(x, padT); ctx.lineTo(x, padT + plotH); ctx.stroke();
+    }
+  }
+  ctx.setLineDash([]);
+  ctx.fillStyle = 'rgba(108,138,255,0.85)';
+  ctx.textAlign = 'left';
+  if (X(state.a) >= padL && X(state.a) <= padL + plotW) ctx.fillText('a', X(state.a) + 4, padT + 12);
+  if (X(state.b) >= padL && X(state.b) <= padL + plotW) ctx.fillText('b', X(state.b) + 4, padT + 12);
+
+  // ── Curves: outside [a,b] is drawn faint, inside is bright ──
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(padL, padT, plotW, plotH);
+  ctx.clip();
+
+  const { xs, fy, sy, partials } = state.samples;
+
+  // Pass 1: faint everywhere (will be covered inside [a,b] in pass 2)
+  // Partials (faint everywhere)
+  if (partials) {
+    for (let p = 0; p < partials.length; p++) {
+      ctx.globalAlpha = 0.04 + 0.05 * (p / partials.length);
+      ctx.strokeStyle = '#6c8aff';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      drawPolyline(xs, partials[p].ys, X, Y, padT, plotH);
+      ctx.stroke();
+    }
+  }
+  // f(x) faint
+  ctx.globalAlpha = 0.20;
+  ctx.strokeStyle = '#f0a060';
+  ctx.lineWidth = 1.6;
+  ctx.beginPath();
+  drawPolyline(xs, fy, X, Y, padT, plotH);
+  ctx.stroke();
+  // S_N faint
+  ctx.globalAlpha = 0.22;
+  ctx.strokeStyle = '#6c8aff';
+  ctx.lineWidth = 1.6;
+  ctx.beginPath();
+  drawPolyline(xs, sy, X, Y, padT, plotH);
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+
+  // Pass 2: bright, clipped to the visible portion of [a,b]
+  const aClip = Math.max(X(state.a), padL);
+  const bClip = Math.min(X(state.b), padL + plotW);
+  if (bClip > aClip) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.rect(aClip, padT, bClip - aClip, plotH);
+    ctx.clip();
+
+    if (partials) {
+      for (let p = 0; p < partials.length; p++) {
+        ctx.globalAlpha = 0.10 + 0.18 * (p / partials.length);
+        ctx.strokeStyle = '#6c8aff';
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        drawPolyline(xs, partials[p].ys, X, Y, padT, plotH);
+        ctx.stroke();
+      }
+      ctx.globalAlpha = 1;
+    }
+
+    ctx.strokeStyle = '#f0a060';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    drawPolyline(xs, fy, X, Y, padT, plotH);
+    ctx.stroke();
+
+    ctx.shadowColor = 'rgba(108,138,255,0.4)';
+    ctx.shadowBlur = 6;
+    ctx.strokeStyle = '#6c8aff';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    drawPolyline(xs, sy, X, Y, padT, plotH);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    ctx.restore();
+  }
+
+  ctx.restore(); // outer clip
+
+  // axis labels
+  ctx.fillStyle = '#888';
+  ctx.font = '11px JetBrains Mono';
+  ctx.textAlign = 'center';
+  ctx.fillText('x', padL + plotW / 2, H - 14);
+  ctx.save();
+  ctx.translate(16, padT + plotH / 2);
+  ctx.rotate(-Math.PI / 2);
+  ctx.fillText('y', 0, 0);
+  ctx.restore();
+}
+
+function drawPolyline(xs, ys, X, Y, top, plotH) {
+  let started = false;
+  let prevY = null;
+  for (let i = 0; i < xs.length; i++) {
+    const v = ys[i];
+    if (!isFinite(v)) { started = false; prevY = null; continue; }
+    const px = X(xs[i]);
+    let py = Y(v);
+    if (py < top - 5000) py = top - 5000;
+    if (py > top + plotH + 5000) py = top + plotH + 5000;
+    if (!started) { ctx.moveTo(px, py); started = true; }
+    else {
+      if (prevY != null && Math.abs(py - prevY) > plotH * 2) ctx.moveTo(px, py);
+      else ctx.lineTo(px, py);
+    }
+    prevY = py;
+  }
+}
+
+/* ──── Tick helpers ──── */
+function niceXTicks(lo, hi) {
+  // Try π-based ticks if range is roughly multiple of π.
+  const span = hi - lo;
+  const piSpan = span / Math.PI;
+  if (piSpan > 0.4 && piSpan < 30) {
+    // pick step
+    const candidates = [0.25, 0.5, 1, 2];
+    let step = 0.5;
+    for (const c of candidates) {
+      if (span / (c * Math.PI) <= 9) { step = c; break; }
+    }
+    const ticks = [];
+    const k0 = Math.ceil(lo / (step * Math.PI));
+    const k1 = Math.floor(hi / (step * Math.PI));
+    for (let k = k0; k <= k1; k++) {
+      const v = k * step * Math.PI;
+      ticks.push({ v, label: piLabel(k, step) });
+    }
+    if (ticks.length >= 3) return ticks;
+  }
+  // fall back to linear
+  return niceLinearTicks(lo, hi, 8).map(v => ({ v, label: fmt(v, 3) }));
+}
+
+function piLabel(k, step) {
+  if (k === 0) return '0';
+  // express k*step as fraction
+  const num = k * step;
+  if (Number.isInteger(num)) {
+    if (num === 1) return 'π';
+    if (num === -1) return '−π';
+    return `${num}π`;
+  }
+  // num is fractional; multiply by 4 to get quarters
+  if (Math.abs(step - 0.25) < 1e-9) {
+    // num = k/4
+    const sign = num < 0 ? '−' : '';
+    const ak = Math.abs(k);
+    if (ak % 4 === 0) return `${sign}${ak/4}π`;
+    if (ak % 2 === 0) return `${sign}${ak/2}π/2`;
+    return `${sign}${ak}π/4`;
+  }
+  if (Math.abs(step - 0.5) < 1e-9) {
+    const sign = num < 0 ? '−' : '';
+    const ak = Math.abs(k);
+    if (ak % 2 === 0) return `${sign}${ak/2}π`;
+    return `${sign}${ak}π/2`;
+  }
+  return fmt(num * Math.PI, 3);
+}
+
+function niceLinearTicks(lo, hi, target) {
+  const span = hi - lo;
+  const raw = span / target;
+  const mag = Math.pow(10, Math.floor(Math.log10(raw)));
+  const norm = raw / mag;
+  let step;
+  if (norm < 1.5) step = 1 * mag;
+  else if (norm < 3) step = 2 * mag;
+  else if (norm < 7) step = 5 * mag;
+  else step = 10 * mag;
+  const ticks = [];
+  const start = Math.ceil(lo / step) * step;
+  for (let v = start; v <= hi + 1e-12; v += step) {
+    if (Math.abs(v) < step * 1e-6) v = 0;
+    ticks.push(v);
+  }
+  return ticks;
+}
+
+/* ──── Pan / Zoom ──── */
+let dragging = false;
+let dragStart = null;
+let panRaf = 0;
+let pendingPan = null;
+
+canvas.addEventListener('pointerdown', e => {
+  if (e.button !== 0) return;
+  dragging = true;
+  dragStart = { x: e.clientX, y: e.clientY, view: { ...state.view } };
+  canvas.classList.add('dragging');
+  canvas.setPointerCapture(e.pointerId);
+});
+
+canvas.addEventListener('pointermove', e => {
+  if (!dragging) return;
+  pendingPan = { cx: e.clientX, cy: e.clientY };
+  if (panRaf) return;
+  panRaf = requestAnimationFrame(() => {
+    panRaf = 0;
+    if (!pendingPan || !dragStart) return;
+    const W = canvas.clientWidth, H = canvas.clientHeight;
+    const plotW = W - PAD_L - PAD_R, plotH = H - PAD_T - PAD_B;
+    if (plotW <= 0 || plotH <= 0) return;
+    const dxPix = pendingPan.cx - dragStart.x;
+    const dyPix = pendingPan.cy - dragStart.y;
+    const v0 = dragStart.view;
+    const xRange = v0.xHi - v0.xLo, yRange = v0.yHi - v0.yLo;
+    const dx = -dxPix / plotW * xRange;
+    const dy =  dyPix / plotH * yRange;     // canvas y is inverted
+    state.view = {
+      xLo: v0.xLo + dx, xHi: v0.xHi + dx,
+      yLo: v0.yLo + dy, yHi: v0.yHi + dy,
+    };
+    resample();
+    draw();
+  });
+});
+
+function endDrag(e) {
+  if (!dragging) return;
+  dragging = false;
+  canvas.classList.remove('dragging');
+  try { canvas.releasePointerCapture(e.pointerId); } catch {}
+  // ensure final hi-res sample
+  resample();
+  draw();
+}
+canvas.addEventListener('pointerup', endDrag);
+canvas.addEventListener('pointercancel', endDrag);
+
+canvas.addEventListener('wheel', e => {
+  e.preventDefault();
+  if (!state.view) return;
+  const rect = canvas.getBoundingClientRect();
+  const px = e.clientX - rect.left;
+  const py = e.clientY - rect.top;
+  const W = canvas.clientWidth, H = canvas.clientHeight;
+  const plotW = W - PAD_L - PAD_R, plotH = H - PAD_T - PAD_B;
+  if (plotW <= 0 || plotH <= 0) return;
+  const v = state.view;
+  const fx = (px - PAD_L) / plotW;
+  const fy = (py - PAD_T) / plotH;
+  const xCursor = v.xLo + fx * (v.xHi - v.xLo);
+  const yCursor = v.yHi - fy * (v.yHi - v.yLo);
+  // Browsers convert shift+vertical-wheel into deltaX, so use whichever axis is non-zero.
+  let delta = e.deltaY !== 0 ? e.deltaY : e.deltaX;
+  if (delta === 0) return;
+  // Normalize for line/page scroll modes
+  if (e.deltaMode === 1) delta *= 16;      // lines
+  else if (e.deltaMode === 2) delta *= 100; // pages
+  const factor = Math.exp(delta * 0.0015);   // scroll up = zoom in (factor < 1)
+  const zoomX = !e.altKey;
+  const zoomY = !e.shiftKey;
+  let nxLo = v.xLo, nxHi = v.xHi, nyLo = v.yLo, nyHi = v.yHi;
+  if (zoomX) {
+    nxLo = xCursor + (v.xLo - xCursor) * factor;
+    nxHi = xCursor + (v.xHi - xCursor) * factor;
+  }
+  if (zoomY) {
+    nyLo = yCursor + (v.yLo - yCursor) * factor;
+    nyHi = yCursor + (v.yHi - yCursor) * factor;
+  }
+  // sanity clamp
+  if (nxHi - nxLo < 1e-7 || nyHi - nyLo < 1e-12) return;
+  if (nxHi - nxLo > 1e9 || nyHi - nyLo > 1e9) return;
+  state.view = { xLo: nxLo, xHi: nxHi, yLo: nyLo, yHi: nyHi };
+  resample();
+  draw();
+}, { passive: false });
+
+/* ──── Input wiring ──── */
+function pauseAnimateIfPlaying() {
+  if (playing) {
+    playing = false;
+    clearInterval(playTimer);
+    playBtn.classList.remove('playing');
+    playBtn.innerHTML = '▶ Animate N';
+  }
+}
+
+function setSliderMax(m) {
+  if (m < 1) m = 1;
+  nSlider.max = m;
+  if (document.activeElement !== nMax) nMax.value = m;
+  if (+nSlider.value > m) nSlider.value = m;
+}
+
+function syncN(value, fromSlider) {
+  let n = value | 0;
+  if (n < 0) n = 0;
+  // grow slider max if user goes higher
+  let smax = +nSlider.max;
+  if (n > smax) {
+    smax = Math.max(n + 50, Math.ceil(smax * 1.5));
+    setSliderMax(smax);
+  }
+  // Always sync BOTH controls — but don't disrupt the one the user is actively typing in.
+  const active = document.activeElement;
+  if (active !== nNumber) nNumber.value = n;
+  if (active !== nSlider) nSlider.value = n;
+  nDisplay.textContent = n;
+  nChanged(n);
+}
+
+nSlider.addEventListener('input', e => { pauseAnimateIfPlaying(); syncN(+e.target.value, true); });
+nNumber.addEventListener('input', e => { pauseAnimateIfPlaying(); syncN(+e.target.value, false); });
+nNumber.addEventListener('change', e => syncN(+e.target.value, false));
+
+nMax.addEventListener('input', () => {
+  const m = Math.max(1, +nMax.value | 0);
+  nSlider.max = m;
+  if (+nSlider.value > m) nSlider.value = m;
+});
+nMax.addEventListener('change', () => {
+  let m = Math.max(1, +nMax.value | 0);
+  nMax.value = m;
+  nSlider.max = m;
+  if (+nSlider.value > m) nSlider.value = m;
+});
+
+document.querySelectorAll('.n-step').forEach(btn => {
+  btn.addEventListener('click', () => {
+    pauseAnimateIfPlaying();
+    const d = +btn.dataset.d;
+    let n = (+nNumber.value | 0) + d;
+    if (n < 0) n = 0;
+    syncN(n, false);
+  });
+});
+
+// keyboard control on the canvas
+canvas.tabIndex = 0;
+canvas.addEventListener('keydown', e => {
+  let d = 0;
+  if (e.key === 'ArrowRight' || e.key === 'ArrowUp')   d = e.shiftKey ? 10 : 1;
+  else if (e.key === 'ArrowLeft' || e.key === 'ArrowDown') d = e.shiftKey ? -10 : -1;
+  else return;
+  e.preventDefault();
+  pauseAnimateIfPlaying();
+  let n = (+nNumber.value | 0) + d;
+  if (n < 0) n = 0;
+  syncN(n, false);
+});
+
+let fnDebounce;
+fnInput.addEventListener('input', () => {
+  clearTimeout(fnDebounce);
+  fnDebounce = setTimeout(() => {
+    if (recompileFn()) rebuildAndFit();
+  }, 220);
+});
+
+function bindBoundsInput(el) {
+  let t;
+  el.addEventListener('input', () => {
+    clearTimeout(t);
+    t = setTimeout(() => { if (recomputeBounds()) rebuildAndFit(); }, 220);
+  });
+  el.addEventListener('change', () => {
+    if (recomputeBounds()) rebuildAndFit();
+  });
+}
+bindBoundsInput(aInput);
+bindBoundsInput(bInput);
+
+document.querySelectorAll('.preset-btn').forEach(b => {
+  b.addEventListener('click', () => {
+    fnInput.value = b.dataset.fn;
+    if (recompileFn()) rebuildAndFit();
+  });
+});
+document.querySelectorAll('.qb-btn').forEach(b => {
+  b.addEventListener('click', () => {
+    aInput.value = b.dataset.a;
+    bInput.value = b.dataset.b;
+    if (recomputeBounds()) rebuildAndFit();
+  });
+});
+
+periodicChk.addEventListener('change', () => { autoFitView(); updateOverlays(); draw(); });
+showCoeffsChk.addEventListener('change', () => { updateOverlays(); });
+showPartialsChk.addEventListener('change', () => { resample(); draw(); });
+resetViewBtn.addEventListener('click', () => { autoFitView(); draw(); });
+
+playBtn.addEventListener('click', () => {
+  if (playing) {
+    playing = false;
+    clearInterval(playTimer);
+    playBtn.classList.remove('playing');
+    playBtn.innerHTML = '▶ Animate N';
+  } else {
+    playing = true;
+    playBtn.classList.add('playing');
+    playBtn.innerHTML = '⏸ Pause';
+    let dir = 1;
+    playTimer = setInterval(() => {
+      let n = +nNumber.value + dir;
+      const max = +nSlider.max;
+      if (n >= max) { n = max; dir = -1; }
+      if (n <= 0) { n = 0; dir = 1; }
+      nSlider.value = n;
+      syncN(n, true);
+    }, 140);
+  }
+});
+
+window.addEventListener('resize', () => { resample(); draw(); });
+
+/* ──── Init ──── */
+recompileFn();
+recomputeBounds();
+state.N = +nNumber.value | 0;
+state.coef = computeFourier(state.fn, state.a, state.b, Math.max(state.N, 1));
+autoFitView();
+updateOverlays();
+draw();
+</script>
+</body>
+</html>

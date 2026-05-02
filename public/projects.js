@@ -65,5 +65,12 @@ const PROJECTS = [
     category: "math",
     emoji: "▦",
     folder: "finite-differences"
+  },
+  {
+    id: "fourier-series",
+    title: "Fourier Series",
+    category: "math",
+    emoji: "\u{1D4BB}",
+    folder: "fourier-series"
   }
 ];
